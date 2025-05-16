@@ -63,6 +63,7 @@ class Server:
 
             # build url
             service_url = self._service.to_url()
+            print(service_url)
             if registry_config:
                 self._url = registry_config.to_url().copy()
                 self._url.attributes[common_constants.EXPORT_KEY] = service_url
@@ -78,7 +79,7 @@ class Server:
         with self._global_lock:
             if self._exported:
                 return
-
+            print("h")
             self._protocol.export(self._url)
 
             self._exported = True

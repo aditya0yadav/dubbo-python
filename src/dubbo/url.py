@@ -295,6 +295,7 @@ class URL:
 
             if encode:
                 url = parse.quote(url, safe="")
+       
 
         return url
 

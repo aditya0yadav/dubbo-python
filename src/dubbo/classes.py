@@ -125,6 +125,7 @@ class MethodDescriptor:
         self._return_serialization = return_serialization
         self._callable_method = callable_method
 
+
         if isinstance(rpc_type, str):
             rpc_type = RpcTypes.from_name(rpc_type)
         elif isinstance(rpc_type, RpcTypes):
@@ -147,6 +148,7 @@ class MethodDescriptor:
         :return: The method name.
         :rtype: str
         """
+        print(self._method_name)
         return self._method_name
 
     def get_rpc_type(self) -> RpcType:
