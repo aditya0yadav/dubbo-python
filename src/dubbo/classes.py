@@ -13,6 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import abc
 import threading
 from typing import Any, Callable, Optional, Union, Type
@@ -248,17 +249,18 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
     pass
 
 class Codec(ABC):
-    """Base interface for all codecs"""
-    
     def __init__(self, model_type: Type[BaseModel] = None, **kwargs):
         self.model_type = model_type
-    
+
     @abstractmethod
     def encode(self, data: Any) -> bytes:
-        """Encode data to bytes"""
         pass
-    
+
     @abstractmethod
     def decode(self, data: bytes) -> Any:
-        """Decode bytes to data"""
         pass
+
+class CodecHelper:
+    @staticmethod
+    def get_class():
+        return Codec

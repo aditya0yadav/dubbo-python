@@ -17,8 +17,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Type, Optional, Callable
 from pydantic import BaseModel
-from dubbo.utils import CodecHelper
-
+from dubbo.classes import CodecHelper
 
 class DubboCodec:
     _codec_instance: Optional[Any] = None
