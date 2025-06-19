@@ -21,17 +21,13 @@ from pydantic import BaseModel
 from dubbo.classes import Codec 
 import orjson
 
-
 class EncodingFunction(Protocol):
     def __call__(self, obj: Any) -> bytes: ...
-
 
 class DecodingFunction(Protocol):
     def __call__(self, data: bytes) -> Any: ...
 
-
 ModelT = TypeVar('ModelT', bound=BaseModel)
-
 
 class JsonCodec(Codec, Generic[ModelT]):
     """JSON codec for Pydantic models using orjson for performance"""
