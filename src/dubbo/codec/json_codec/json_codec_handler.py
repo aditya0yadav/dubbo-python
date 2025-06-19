@@ -18,7 +18,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Type, Protocol, Callable, TypeVar, Generic
 from functools import wraps
 from pydantic import BaseModel
-from dubbo.classes import Codec  # Fixed import path
+from dubbo.classes import Codec 
 import orjson
 
 

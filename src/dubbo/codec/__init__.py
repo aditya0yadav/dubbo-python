@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from .dubbo_codec import DubboCodec
-from .base_codec import CodecInterface as Codec
 
-__all__ = ["DubboCodec", "Codec"]
+from .dubbo_codec import DubboCodec
+
+__all__ = ["DubboCodec"]
