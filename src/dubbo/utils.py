@@ -385,3 +385,10 @@ class FunctionHelper:
         bound_args = sig.bind(*args, **kwargs)
         bound_args.apply_defaults()
         return func(*bound_args.args, **bound_args.kwargs)
+
+class CodecHelper:
+    @staticmethod
+    def get_class():
+        """Return the Codec Class"""
+        from .classes import Codec
+        return Codec

@@ -13,18 +13,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from abc import ABC, abstractmethod
-from typing import Any, Union
 
-class Codec(ABC):
-    """Base codec interface for encoding/decoding data"""
+from abc import ABC, abstractmethod
+from typing import Any, Type
+from pydantic import BaseModel
+
+class CodecInterface(ABC):
+    """Base interface for all codecs"""
+    
+    def __init__(self, model_type: Type[BaseModel] = None, **kwargs):
+        self.model_type = model_type
     
     @abstractmethod
     def encode(self, data: Any) -> bytes:
-        """Encode Python object to bytes"""
+        """Encode data to bytes"""
         pass
     
     @abstractmethod
     def decode(self, data: bytes) -> Any:
-        """Decode bytes to Python object"""
+        """Decode bytes to data"""
         pass

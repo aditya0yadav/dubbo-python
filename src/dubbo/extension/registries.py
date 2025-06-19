@@ -22,7 +22,7 @@ from dubbo.compression import Compressor, Decompressor
 from dubbo.protocol import Protocol
 from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
-
+from dubbo.classes import Codec
 
 @dataclass
 class ExtendedRegistry:
@@ -47,6 +47,7 @@ registries = [
     "compressorRegistry",
     "decompressorRegistry",
     "transporterRegistry",
+    "codecRegistry"
 ]
 
 # RegistryFactory registry
@@ -102,4 +103,12 @@ transporterRegistry = ExtendedRegistry(
     impls={
         "aio": "dubbo.remoting.aio.aio_transporter.AioTransporter",
     },
+)
+
+# Codec registry 
+codecRegistry = ExtendedRegistry(
+    interface=Codec, 
+    impls={
+        "json": "dubbo.codec.json_codec.JsonCodec",  
+    }
 )

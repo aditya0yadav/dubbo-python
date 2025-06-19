@@ -15,7 +15,9 @@
 # limitations under the License.
 import abc
 import threading
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Type
+from abc import ABC, abstractmethod
+from pydantic import BaseModel
 
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction
 
@@ -244,3 +246,19 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
     """
 
     pass
+
+class Codec(ABC):
+    """Base interface for all codecs"""
+    
+    def __init__(self, model_type: Type[BaseModel] = None, **kwargs):
+        self.model_type = model_type
+    
+    @abstractmethod
+    def encode(self, data: Any) -> bytes:
+        """Encode data to bytes"""
+        pass
+    
+    @abstractmethod
+    def decode(self, data: bytes) -> Any:
+        """Decode bytes to data"""
+        pass

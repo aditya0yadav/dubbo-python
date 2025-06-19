@@ -13,15 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from abc import ABC, abstractmethod
 from typing import Any, Type, Protocol, Callable, TypeVar, Generic
-import dubbo
 from functools import wraps
 from pydantic import BaseModel
-from typing import Any, Type, TypeVar, Generic
-from pydantic import BaseModel
-from dubbo.codec.base_codec import Codec
+from dubbo.classes import Codec  # Fixed import path
 import orjson
+
 
 class EncodingFunction(Protocol):
     def __call__(self, obj: Any) -> bytes: ...
@@ -30,15 +29,19 @@ class EncodingFunction(Protocol):
 class DecodingFunction(Protocol):
     def __call__(self, data: bytes) -> Any: ...
 
+
 ModelT = TypeVar('ModelT', bound=BaseModel)
+
 
 class JsonCodec(Codec, Generic[ModelT]):
     """JSON codec for Pydantic models using orjson for performance"""
     
-    def __init__(self, model_type: Type[ModelT]):
+    def __init__(self, model_type: Type[ModelT], **kwargs):
+        super().__init__(model_type=model_type, **kwargs)  # Call parent constructor
         self.model_type = model_type
 
     def encode(self, data: Any) -> bytes:
+        """Encode data to JSON bytes"""
         if isinstance(data, dict):
             data = self.model_type(**data)
         elif not isinstance(data, self.model_type):
@@ -46,5 +49,6 @@ class JsonCodec(Codec, Generic[ModelT]):
         return orjson.dumps(data.model_dump())
 
     def decode(self, data: bytes) -> ModelT:
+        """Decode JSON bytes to Pydantic model"""
         json_data = orjson.loads(data)
         return self.model_type(**json_data)

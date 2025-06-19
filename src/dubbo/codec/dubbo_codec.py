@@ -16,27 +16,29 @@
 
 from abc import ABC, abstractmethod
 from typing import Any, Type, Optional, Callable
-from .base_codec import Codec
-from .codec_registry import CodecRegistry
 from pydantic import BaseModel
+from dubbo.utils import CodecHelper
+
 
 class DubboCodec:
-    _codec_instance: Optional[Codec] = None
+    _codec_instance: Optional[Any] = None
 
     @staticmethod
     def init(codec_type: str = 'json', model_type: Optional[Type[BaseModel]] = None, **codec_kwargs):
         """Initialize codec with specified type and options"""
         if model_type is None:
             raise ValueError("model_type is required for all codecs")
+                
+        from dubbo.extension.extension_loader import ExtensionLoader
         
-        DubboCodec._codec_instance = CodecRegistry.get_codec(
-            codec_type, 
-            model_type=model_type, 
-            **codec_kwargs
-        )
+        # Get the Codec class from CodecHelper
+        Codec = CodecHelper.get_class()
+                
+        codec_class = ExtensionLoader().get_extension(Codec, codec_type)
+        DubboCodec._codec_instance = codec_class(model_type=model_type, **codec_kwargs)
 
     @staticmethod
-    def get_instance() -> Codec:
+    def get_instance():
         if DubboCodec._codec_instance is None:
             raise RuntimeError("DubboCodec is not initialized. Call DubboCodec.init(...) first.")
         return DubboCodec._codec_instance
@@ -51,21 +53,27 @@ class DubboCodec:
 
     @staticmethod
     def get_serializer_deserializer(
-        codec_type: str, 
-        request_model: Type[BaseModel] = None, 
+        codec_type: str,
+        request_model: Type[BaseModel] = None,
         response_model: Type[BaseModel] = None,
-        **codec_kwargs
     ) -> tuple[Callable, Callable]:
         """Get serializer and deserializer functions for RPC"""
         
-        request_codec = CodecRegistry.get_codec(codec_type, model_type=request_model, **codec_kwargs)
+        from dubbo.extension.extension_loader import ExtensionLoader
         
-        response_codec = CodecRegistry.get_codec(codec_type, model_type=response_model, **codec_kwargs)
-        
+        # Get the Codec class from CodecHelper
+        Codec = CodecHelper.get_class()
+
+        request_codec_class = ExtensionLoader().get_extension(Codec, codec_type)
+        request_codec = request_codec_class(model_type=request_model)
+
+        response_codec_class = ExtensionLoader().get_extension(Codec, codec_type)
+        response_codec = response_codec_class(model_type=response_model)
+
         def request_deserializer(data: bytes):
             return request_codec.decode(data)
-        
+
         def response_serializer(response):
             return response_codec.encode(response)
-        
+
         return request_deserializer, response_serializer
