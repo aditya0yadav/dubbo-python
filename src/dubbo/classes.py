@@ -13,10 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import abc
 import threading
-from typing import Any, Callable, Optional, Union
-
+from typing import Any, Callable, Optional, Union,Type
+from abc import ABC, abstractmethod
+from pydantic import BaseModel
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction
 
 __all__ = [
@@ -244,3 +246,21 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
     """
 
     pass
+
+
+class Codec(ABC):
+    def __init__(self, model_type: Type[BaseModel] = None, **kwargs):
+        self.model_type = model_type
+
+    @abstractmethod
+    def encode(self, data: Any) -> bytes:
+        pass
+
+    @abstractmethod
+    def decode(self, data: bytes) -> Any:
+        pass
+
+class CodecHelper:
+    @staticmethod
+    def get_class():
+        return Codec
