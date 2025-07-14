@@ -84,8 +84,9 @@ class Client:
 
             self._initialized = True
 
-    def unary(
+    def _create_rpc_callable(
         self,
+        rpc_type: str,
         interface: Optional[Callable] = None,
         method_name: Optional[str] = None,
         params_types: Optional[List[Type]] = None,
@@ -93,19 +94,17 @@ class Client:
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        default_method_name: str = "rpc_call",
     ) -> RpcCallable:
         """
-        Create unary RPC call.
-
-        Supports both automatic mode (via interface) and manual mode (via method_name + params_types + return_type + codec).
+        Create RPC callable with the specified type.
         """
-
         # Validate
         if interface is None and method_name is None:
             raise ValueError("Either 'interface' or 'method_name' must be provided")
 
         # Determine the actual method name to call
-        actual_method_name = method_name or (interface.__name__ if interface else "unary")
+        actual_method_name = method_name or (interface.__name__ if interface else default_method_name)
         
         # Build method descriptor (automatic or manual)
         if interface:
@@ -140,16 +139,42 @@ class Client:
             )
 
         # Create the proper MethodDescriptor for the RPC call
-        # This should match the structure expected by your RpcCallableFactory
         rpc_method_descriptor = MethodDescriptor(
             method_name=actual_method_name,
             arg_serialization=(final_request_serializer, None),  # (serializer, deserializer) for arguments
             return_serialization=(None, final_response_deserializer),  # (serializer, deserializer) for return value
-            rpc_type=RpcTypes.UNARY.value,
+            rpc_type=rpc_type,
         )
 
         # Create and return the RpcCallable
         return self._callable(rpc_method_descriptor)
+
+    def unary(
+        self,
+        interface: Optional[Callable] = None,
+        method_name: Optional[str] = None,
+        params_types: Optional[List[Type]] = None,
+        return_type: Optional[Type] = None,
+        codec: Optional[str] = None,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+    ) -> RpcCallable:
+        """
+        Create unary RPC call.
+
+        Supports both automatic mode (via interface) and manual mode (via method_name + params_types + return_type + codec).
+        """
+        return self._create_rpc_callable(
+            rpc_type=RpcTypes.UNARY.value,
+            interface=interface,
+            method_name=method_name,
+            params_types=params_types,
+            return_type=return_type,
+            codec=codec,
+            request_serializer=request_serializer,
+            response_deserializer=response_deserializer,
+            default_method_name="unary",
+        )
 
     def client_stream(
         self,
@@ -166,57 +191,17 @@ class Client:
 
         Supports both automatic mode (via interface) and manual mode (via method_name + params_types + return_type + codec).
         """
-
-        # Validate
-        if interface is None and method_name is None:
-            raise ValueError("Either 'interface' or 'method_name' must be provided")
-
-        # Determine the actual method name to call
-        actual_method_name = method_name or (interface.__name__ if interface else "client_stream")
-        
-        # Build method descriptor (automatic or manual)
-        if interface:
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=interface,
-                method_name=actual_method_name,
-                parameter_types=params_types,
-                return_type=return_type,
-                interface=interface,
-            )
-        else:
-            # Manual mode fallback: use dummy function for descriptor creation
-            def dummy(): pass
-
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=dummy,
-                method_name=actual_method_name,
-                parameter_types=params_types or [],
-                return_type=return_type or Any,
-            )
-
-        # Determine serializers if not provided
-        if request_serializer and response_deserializer:
-            final_request_serializer = request_serializer
-            final_response_deserializer = response_deserializer
-        else:
-            # Use DubboTransportService to generate serialization functions
-            final_request_serializer, final_response_deserializer = DubboTransportService.create_serialization_functions(
-                transport_type=codec or "json",
-                parameter_types=[p.annotation for p in method_desc.parameters],
-                return_type=method_desc.return_parameter.annotation,
-            )
-
-        # Create the proper MethodDescriptor for the RPC call
-        # This should match the structure expected by your RpcCallableFactory
-        rpc_method_descriptor = MethodDescriptor(
-            method_name=actual_method_name,
-            arg_serialization=(final_request_serializer, None),  # (serializer, deserializer) for arguments
-            return_serialization=(None, final_response_deserializer),  # (serializer, deserializer) for return value
+        return self._create_rpc_callable(
             rpc_type=RpcTypes.CLIENT_STREAM.value,
+            interface=interface,
+            method_name=method_name,
+            params_types=params_types,
+            return_type=return_type,
+            codec=codec,
+            request_serializer=request_serializer,
+            response_deserializer=response_deserializer,
+            default_method_name="client_stream",
         )
-
-        # Create and return the RpcCallable
-        return self._callable(rpc_method_descriptor)
 
     def server_stream(
         self,
@@ -233,57 +218,17 @@ class Client:
 
         Supports both automatic mode (via interface) and manual mode (via method_name + params_types + return_type + codec).
         """
-
-        # Validate
-        if interface is None and method_name is None:
-            raise ValueError("Either 'interface' or 'method_name' must be provided")
-
-        # Determine the actual method name to call
-        actual_method_name = method_name or (interface.__name__ if interface else "server_stream")
-        
-        # Build method descriptor (automatic or manual)
-        if interface:
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=interface,
-                method_name=actual_method_name,
-                parameter_types=params_types,
-                return_type=return_type,
-                interface=interface,
-            )
-        else:
-            # Manual mode fallback: use dummy function for descriptor creation
-            def dummy(): pass
-
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=dummy,
-                method_name=actual_method_name,
-                parameter_types=params_types or [],
-                return_type=return_type or Any,
-            )
-
-        # Determine serializers if not provided
-        if request_serializer and response_deserializer:
-            final_request_serializer = request_serializer
-            final_response_deserializer = response_deserializer
-        else:
-            # Use DubboTransportService to generate serialization functions
-            final_request_serializer, final_response_deserializer = DubboTransportService.create_serialization_functions(
-                transport_type=codec or "json",
-                parameter_types=[p.annotation for p in method_desc.parameters],
-                return_type=method_desc.return_parameter.annotation,
-            )
-
-        # Create the proper MethodDescriptor for the RPC call
-        # This should match the structure expected by your RpcCallableFactory
-        rpc_method_descriptor = MethodDescriptor(
-            method_name=actual_method_name,
-            arg_serialization=(final_request_serializer, None),  # (serializer, deserializer) for arguments
-            return_serialization=(None, final_response_deserializer),  # (serializer, deserializer) for return value
+        return self._create_rpc_callable(
             rpc_type=RpcTypes.SERVER_STREAM.value,
+            interface=interface,
+            method_name=method_name,
+            params_types=params_types,
+            return_type=return_type,
+            codec=codec,
+            request_serializer=request_serializer,
+            response_deserializer=response_deserializer,
+            default_method_name="server_stream",
         )
-
-        # Create and return the RpcCallable
-        return self._callable(rpc_method_descriptor)
 
     def bi_stream(
         self,
@@ -300,56 +245,17 @@ class Client:
 
         Supports both automatic mode (via interface) and manual mode (via method_name + params_types + return_type + codec).
         """
-
-        # Validate
-        if interface is None and method_name is None:
-            raise ValueError("Either 'interface' or 'method_name' must be provided")
-
-        # Determine the actual method name to call
-        actual_method_name = method_name or (interface.__name__ if interface else "bi_stream")
-        
-        # Build method descriptor (automatic or manual)
-        if interface:
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=interface,
-                method_name=actual_method_name,
-                parameter_types=params_types,
-                return_type=return_type,
-                interface=interface,
-            )
-        else:
-            # Manual mode fallback: use dummy function for descriptor creation
-            def dummy(): pass
-
-            method_desc = DubboTransportService.create_method_descriptor(
-                func=dummy,
-                method_name=actual_method_name,
-                parameter_types=params_types or [],
-                return_type=return_type or Any,
-            )
-
-        # Determine serializers if not provided
-        if request_serializer and response_deserializer:
-            final_request_serializer = request_serializer
-            final_response_deserializer = response_deserializer
-        else:
-            # Use DubboTransportService to generate serialization functions
-            final_request_serializer, final_response_deserializer = DubboTransportService.create_serialization_functions(
-                transport_type=codec or "json",
-                parameter_types=[p.annotation for p in method_desc.parameters],
-                return_type=method_desc.return_parameter.annotation,
-            )
-
-
-        rpc_method_descriptor = MethodDescriptor(
-            method_name=actual_method_name,
-            arg_serialization=(final_request_serializer, None),  
-            return_serialization=(None, final_response_deserializer),  
+        return self._create_rpc_callable(
             rpc_type=RpcTypes.BI_STREAM.value,
+            interface=interface,
+            method_name=method_name,
+            params_types=params_types,
+            return_type=return_type,
+            codec=codec,
+            request_serializer=request_serializer,
+            response_deserializer=response_deserializer,
+            default_method_name="bi_stream",
         )
-
-        # Create and return the RpcCallable
-        return self._callable(rpc_method_descriptor)
 
     def _callable(self, method_descriptor: MethodDescriptor) -> RpcCallable:
         """
