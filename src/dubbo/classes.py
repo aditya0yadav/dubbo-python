@@ -18,7 +18,6 @@ import abc
 import threading
 from typing import Any, Callable, Optional, Union,Type
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction
 
 __all__ = [
@@ -249,7 +248,7 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
 
 
 class Codec(ABC):
-    def __init__(self, model_type: Type[BaseModel] = None, **kwargs):
+    def __init__(self, model_type: Optional[Type[Any]] = None, **kwargs):
         self.model_type = model_type
 
     @abstractmethod
