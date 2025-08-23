@@ -82,8 +82,6 @@ class DubboTransportService:
                 return_type=return_type,
                 **codec_options
             )
-            print("codec_instance", codec_instance.get_encoder(), codec_instance.get_decoder())
-
             return codec_instance.get_encoder(), codec_instance.get_decoder()
 
     @staticmethod
@@ -104,7 +102,6 @@ class DubboTransportService:
         def deserialize_method_return(data: bytes):
             return return_decoder.decode(data)
         
-        print(type(serialize_method_parameters),type(deserialize_method_return))
         return serialize_method_parameters, deserialize_method_return
 
     @staticmethod
