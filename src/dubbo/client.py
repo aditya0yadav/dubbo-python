@@ -132,11 +132,8 @@ class Client:
             final_response_deserializer = response_deserializer
         else:
             # Use DubboTransportService to generate serialization functions
-            final_request_serializer, final_response_deserializer = DubboTransportService.create_serialization_functions(
-                transport_type=codec or "json",
-                parameter_types=[p.annotation for p in method_desc.parameters],
-                return_type=method_desc.return_parameter.annotation,
-            )
+            final_request_serializer, final_response_deserializer = DubboTransportService.create_serialization_functions(codec, parameter_types=params_types, return_type=return_type)
+            print("final",codec, final_request_serializer, final_response_deserializer)
 
         # Create the proper MethodDescriptor for the RPC call
         rpc_method_descriptor = MethodDescriptor(
