@@ -16,6 +16,4 @@
 
 from .protobuf_codec_handler import ProtobufTransportCodec, ProtobufTransportEncoder, ProtobufTransportDecoder
 
-__all__ = [
-    "ProtobufTransportCodec", "ProtobufTransportEncoder", "ProtobufTransportDecoder"
-]
+__all__ = ["ProtobufTransportCodec", "ProtobufTransportEncoder", "ProtobufTransportDecoder"]

@@ -127,7 +127,7 @@ registries = [
     "compressorRegistry",
     "decompressorRegistry",
     "transporterRegistry",
-    "codecRegistry", 
+    "codecRegistry",
 ]
 
 # RegistryFactory registry

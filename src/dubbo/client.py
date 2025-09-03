@@ -63,17 +63,11 @@ class Client:
                 return
 
             # get the protocol
-            protocol = extensionLoader.get_extension(
-                Protocol, self._reference.protocol
-            )()
+            protocol = extensionLoader.get_extension(Protocol, self._reference.protocol)()
 
             registry_config = self._dubbo.registry_config
 
-            self._protocol = (
-                RegistryProtocol(registry_config, protocol)
-                if registry_config
-                else protocol
-            )
+            self._protocol = RegistryProtocol(registry_config, protocol) if registry_config else protocol
 
             # build url
             reference_url = self._reference.to_url()
@@ -109,7 +103,7 @@ class Client:
             res_deser = response_deserializer
         else:
             req_ser, res_deser = DubboTransportService.create_serialization_functions(
-                codec or "json", 
+                codec or "json",
                 parameter_types=params_types,
                 return_type=return_type,
             )
@@ -124,13 +118,7 @@ class Client:
 
         return self._callable(descriptor)
 
-    def unary(
-        self, 
-        method_name: str,
-        params_types: List[Type],
-        return_type: Type,
-        **kwargs
-    ) -> RpcCallable:
+    def unary(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.UNARY.value,
             method_name=method_name,
@@ -139,13 +127,7 @@ class Client:
             **kwargs,
         )
 
-    def client_stream(
-        self, 
-        method_name: str,
-        params_types: List[Type],
-        return_type: Type,
-        **kwargs
-    ) -> RpcCallable:
+    def client_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.CLIENT_STREAM.value,
             method_name=method_name,
@@ -154,13 +136,7 @@ class Client:
             **kwargs,
         )
 
-    def server_stream(
-        self, 
-        method_name: str,
-        params_types: List[Type],
-        return_type: Type,
-        **kwargs
-    ) -> RpcCallable:
+    def server_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.SERVER_STREAM.value,
             method_name=method_name,
@@ -169,13 +145,7 @@ class Client:
             **kwargs,
         )
 
-    def bi_stream(
-        self, 
-        method_name: str,
-        params_types: List[Type],
-        return_type: Type,
-        **kwargs
-    ) -> RpcCallable:
+    def bi_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.BI_STREAM.value,
             method_name=method_name,
@@ -189,8 +159,6 @@ class Client:
         Generate a proxy for the given method.
         """
         url = self._invoker.get_url().copy()
-        url.parameters[common_constants.METHOD_KEY] = (
-            method_descriptor.get_method_name()
-        )
+        url.parameters[common_constants.METHOD_KEY] = method_descriptor.get_method_name()
         url.attributes[common_constants.METHOD_DESCRIPTOR_KEY] = method_descriptor
         return self._callable_factory.get_callable(self._invoker, url)

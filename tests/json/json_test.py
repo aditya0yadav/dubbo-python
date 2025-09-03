@@ -15,54 +15,76 @@
 # limitations under the License.
 
 import pytest
-from datetime import datetime
+from pathlib import Path
+from uuid import UUID
 from decimal import Decimal
-from uuid import uuid4
+from datetime import datetime, date, time
+from dataclasses import dataclass
+from enum import Enum
+from pydantic import BaseModel
+from dubbo.codec.json_codec import JsonTransportCodec
 
-from dubbo.codec.json_codec.json_codec_handler import JsonTransportCodec
 
-def test_json_single_parameter_roundtrip():
-    codec = JsonTransportCodec(parameter_types=[int], return_type=int)
+# Optional dataclass and enum examples
+@dataclass
+class SampleDataClass:
+    field1: int
+    field2: str
 
-    # Encode a single int
-    encoded = codec.encode_parameters(42)
+
+class Color(Enum):
+    RED = "red"
+    GREEN = "green"
+
+
+class SamplePydanticModel(BaseModel):
+    name: str
+    value: int
+
+
+# List of test cases: (input_value, expected_type_after_decoding)
+test_cases = [
+    ("simple string", str),
+    (12345, int),
+    (12.34, float),
+    (True, bool),
+    (datetime(2025, 8, 27, 13, 0, 0), datetime),
+    (date(2025, 8, 27), date),
+    (time(13, 0, 0), time),
+    (Decimal("123.45"), Decimal),
+    (set([1, 2, 3]), set),
+    (frozenset(["a", "b"]), frozenset),
+    (UUID("12345678-1234-5678-1234-567812345678"), UUID),
+    (Path("/tmp/file.txt"), Path),
+    (Color.RED, Color),
+    (SamplePydanticModel(name="test", value=42), SamplePydanticModel),
+]
+
+
+@pytest.mark.parametrize("value,expected_type", test_cases)
+def test_json_codec_roundtrip(value, expected_type):
+    codec = JsonTransportCodec(parameter_types=[type(value)], return_type=type(value))
+
+    # Encode
+    encoded = codec.encode_parameters(value)
     assert isinstance(encoded, bytes)
 
-    # Decode back
+    # Decode
     decoded = codec.decode_return_value(encoded)
-    assert decoded == 42
 
+    # For pydantic models, compare dict representation
+    if hasattr(value, "dict") and callable(value.dict):
+        assert decoded.dict() == value.dict()
+    # For dataclass, compare asdict
+    elif hasattr(value, "__dataclass_fields__"):
+        from dataclasses import asdict
 
-def test_json_multiple_parameters_roundtrip():
-    codec = JsonTransportCodec(parameter_types=[str, int], return_type=str)
-
-    # Encode multiple args
-    encoded = codec.encode_parameters("hello", 123)
-    assert isinstance(encoded, bytes)
-
-    # Decode return (simulate server returning str)
-    return_encoded = codec.get_encoder().encode(("world",))
-    decoded = codec.decode_return_value(return_encoded)
-    assert decoded == "world"
-
-
-def test_json_complex_types():
-    codec = JsonTransportCodec(parameter_types=[dict], return_type=dict)
-
-    obj = {
-        "name": "Alice",
-        "when": datetime(2025, 8, 27, 12, 30),
-        "price": Decimal("19.99"),
-        "ids": {uuid4(), uuid4()}
-    }
-
-    encoded = codec.encode_parameters(obj)
-    assert isinstance(encoded, bytes)
-
-    decoded = codec.decode_return_value(encoded)
-    assert isinstance(decoded, dict)
-    assert decoded["name"] == "Alice"
-    assert isinstance(decoded["price"], Decimal)
-    assert isinstance(decoded["when"], datetime)
-    assert isinstance(decoded["ids"], set)
-
+        assert asdict(decoded) == asdict(value)
+    # For sets/frozensets, compare as sets
+    elif isinstance(value, (set, frozenset)):
+        assert decoded == value
+    # For enum
+    elif isinstance(value, Enum):
+        assert decoded.value == value.value
+    else:
+        assert decoded == value

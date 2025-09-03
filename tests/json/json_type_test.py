@@ -25,19 +25,23 @@ from pydantic import BaseModel
 
 from dubbo.codec.json_codec.json_codec_handler import JsonTransportCodec
 
+
 # Optional dataclass and enum examples
 @dataclass
 class SampleDataClass:
     field1: int
     field2: str
 
+
 class Color(Enum):
     RED = "red"
     GREEN = "green"
 
+
 class SamplePydanticModel(BaseModel):
     name: str
     value: int
+
 
 # List of test cases: (input_value, expected_type_after_decoding)
 test_cases = [
@@ -55,26 +59,28 @@ test_cases = [
     (Path("/tmp/file.txt"), Path),
     (SampleDataClass(1, "abc"), SampleDataClass),
     (Color.RED, Color),
-    (SamplePydanticModel(name="test", value=42), SamplePydanticModel)
+    (SamplePydanticModel(name="test", value=42), SamplePydanticModel),
 ]
+
 
 @pytest.mark.parametrize("value,expected_type", test_cases)
 def test_json_codec_roundtrip(value, expected_type):
     codec = JsonTransportCodec(parameter_types=[type(value)], return_type=type(value))
-    
+
     # Encode
     encoded = codec.encode_parameters(value)
     assert isinstance(encoded, bytes)
-    
+
     # Decode
     decoded = codec.decode_return_value(encoded)
-    
+
     # For pydantic models, compare dict representation
     if hasattr(value, "dict") and callable(value.dict):
         assert decoded.dict() == value.dict()
     # For dataclass, compare asdict
     elif hasattr(value, "__dataclass_fields__"):
         from dataclasses import asdict
+
         assert asdict(decoded) == asdict(value)
     # For sets/frozensets, compare as sets
     elif isinstance(value, (set, frozenset)):
@@ -84,4 +90,3 @@ def test_json_codec_roundtrip(value, expected_type):
         assert decoded.value == value.value
     else:
         assert decoded == value
-

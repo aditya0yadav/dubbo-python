@@ -16,4 +16,4 @@
 
 from .dubbo_codec import DubboTransportService
 
-__all__ = ['DubboTransportService']
+__all__ = ["DubboTransportService"]

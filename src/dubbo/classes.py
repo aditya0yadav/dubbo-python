@@ -16,7 +16,7 @@
 
 import abc
 import threading
-from typing import Any, Callable, Optional, Union,Type
+from typing import Any, Callable, Optional, Union, Type
 from abc import ABC, abstractmethod
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction
 
@@ -258,6 +258,7 @@ class Codec(ABC):
     @abstractmethod
     def decode(self, data: bytes) -> Any:
         pass
+
 
 class CodecHelper:
     @staticmethod

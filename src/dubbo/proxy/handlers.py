@@ -31,6 +31,7 @@ class RpcMethodConfigurationError(Exception):
     """
     Raised when RPC method is configured incorrectly.
     """
+
     pass
 
 
@@ -142,7 +143,7 @@ class RpcMethodHandler:
             method_name=method_name or method.__name__,
             arg_serialization=(None, request_deserializer),
             return_serialization=(response_serializer, None),
-            rpc_type=rpc_type
+            rpc_type=rpc_type,
         )
 
     @classmethod

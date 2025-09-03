@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ParameterDescriptor:
     """Detailed information about a method parameter"""
+
     name: str
     annotation: Any
     is_required: bool = True
@@ -34,6 +35,7 @@ class ParameterDescriptor:
 @dataclass
 class MethodDescriptor:
     """Complete method descriptor with all necessary information"""
+
     function: Callable
     name: str
     parameters: List[ParameterDescriptor]
@@ -45,20 +47,17 @@ class DubboSerializationService:
     """Dubbo serialization service with robust type handling"""
 
     @staticmethod
-    def create_transport_codec(transport_type: str = 'json', parameter_types: List[Type] = None,
-                               return_type: Type = None, **codec_options):
+    def create_transport_codec(
+        transport_type: str = "json", parameter_types: List[Type] = None, return_type: Type = None, **codec_options
+    ):
         """Create transport codec with enhanced parameter structure"""
-        
+
         try:
             from dubbo.extension.extension_loader import ExtensionLoader
             from dubbo.classes import CodecHelper
-            
+
             codec_class = ExtensionLoader().get_extension(CodecHelper.get_class(), transport_type)
-            return codec_class(
-                parameter_types=parameter_types or [],
-                return_type=return_type,
-                **codec_options
-            )
+            return codec_class(parameter_types=parameter_types or [], return_type=return_type, **codec_options)
         except ImportError as e:
             logger.error(f"Failed to import required modules: {e}")
             raise
@@ -67,41 +66,37 @@ class DubboSerializationService:
             raise
 
     @staticmethod
-    def create_encoder_decoder_pair(transport_type: str, parameter_types: List[Type] = None,
-                                    return_type: Type = None, **codec_options) -> Tuple[Any, Any]:
+    def create_encoder_decoder_pair(
+        transport_type: str, parameter_types: List[Type] = None, return_type: Type = None, **codec_options
+    ) -> Tuple[Any, Any]:
         """Create separate encoder and decoder instances"""
 
         try:
             codec_instance = DubboSerializationService.create_transport_codec(
-                transport_type=transport_type,
-                parameter_types=parameter_types,
-                return_type=return_type,
-                **codec_options
+                transport_type=transport_type, parameter_types=parameter_types, return_type=return_type, **codec_options
             )
-            
+
             encoder = codec_instance.get_encoder()
             decoder = codec_instance.get_decoder()
-            
+
             if encoder is None or decoder is None:
                 raise ValueError(f"Codec for transport type '{transport_type}' returned None encoder/decoder")
-                
+
             return encoder, decoder
-            
+
         except Exception as e:
             logger.error(f"Failed to create encoder/decoder pair: {e}")
             raise
 
     @staticmethod
-    def create_serialization_functions(transport_type: str, parameter_types: List[Type] = None,
-                                       return_type: Type = None, **codec_options) -> Tuple[Callable, Callable]:
+    def create_serialization_functions(
+        transport_type: str, parameter_types: List[Type] = None, return_type: Type = None, **codec_options
+    ) -> Tuple[Callable, Callable]:
         """Create serializer and deserializer functions for RPC (backward compatibility)"""
 
         try:
             parameter_encoder, return_decoder = DubboSerializationService.create_encoder_decoder_pair(
-                transport_type=transport_type,
-                parameter_types=parameter_types,
-                return_type=return_type,
-                **codec_options
+                transport_type=transport_type, parameter_types=parameter_types, return_type=return_type, **codec_options
             )
 
             def serialize_method_parameters(*args) -> bytes:
@@ -119,17 +114,21 @@ class DubboSerializationService:
                 except Exception as e:
                     logger.error(f"Failed to deserialize return value: {e}")
                     raise
-            
+
             return serialize_method_parameters, deserialize_method_return
-            
+
         except Exception as e:
             logger.error(f"Failed to create serialization functions: {e}")
             raise
 
     @staticmethod
-    def create_method_descriptor(func: Callable, method_name: Optional[str] = None,
-                                 parameter_types: List[Type] = None, return_type: Type = None,
-                                 interface: Callable = None) -> MethodDescriptor:
+    def create_method_descriptor(
+        func: Callable,
+        method_name: Optional[str] = None,
+        parameter_types: List[Type] = None,
+        return_type: Type = None,
+        interface: Callable = None,
+    ) -> MethodDescriptor:
         """Create a method descriptor from function and configuration"""
 
         if not callable(func):
@@ -138,7 +137,7 @@ class DubboSerializationService:
         # Use interface signature if provided, otherwise use func signature
         target_function = interface if interface else func
         name = method_name or target_function.__name__
-        
+
         try:
             sig = inspect.signature(target_function)
         except ValueError as e:
@@ -151,7 +150,7 @@ class DubboSerializationService:
 
         for param_name, param in sig.parameters.items():
             # Skip 'self' parameter for methods
-            if param_name == 'self':
+            if param_name == "self":
                 continue
 
             # Get parameter type from provided types, annotation, or default to Any
@@ -165,13 +164,12 @@ class DubboSerializationService:
             is_required = param.default == inspect.Parameter.empty
             default_value = param.default if not is_required else None
 
-            parameters.append(ParameterDescriptor(
-                name=param_name,
-                annotation=param_type,
-                is_required=is_required,
-                default_value=default_value
-            ))
-            
+            parameters.append(
+                ParameterDescriptor(
+                    name=param_name, annotation=param_type, is_required=is_required, default_value=default_value
+                )
+            )
+
             param_index += 1
 
         # Resolve return type
@@ -182,15 +180,12 @@ class DubboSerializationService:
         else:
             resolved_return_type = Any
 
-        return_parameter = ParameterDescriptor(
-            name="return_value",
-            annotation=resolved_return_type
-        )
+        return_parameter = ParameterDescriptor(name="return_value", annotation=resolved_return_type)
 
         return MethodDescriptor(
             function=func,
             name=name,
             parameters=parameters,
             return_parameter=return_parameter,
-            documentation=inspect.getdoc(target_function)
+            documentation=inspect.getdoc(target_function),
         )
