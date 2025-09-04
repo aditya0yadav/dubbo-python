@@ -23,10 +23,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Union
 from uuid import UUID
+from typing import Optional
 
 
 class StandardJsonPlugin:
-    """Standard library JSON plugin"""
+    """Standard library JSON codec"""
 
     def encode(self, obj: Any) -> bytes:
         return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -39,7 +40,7 @@ class StandardJsonPlugin:
 
 
 class OrJsonPlugin:
-    """orjson plugin independent implementation"""
+    """orjson Codec independent implementation"""
 
     def __init__(self):
         try:
@@ -131,12 +132,12 @@ class UJsonPlugin:
 
 
 class DateTimeHandler:
-    """DateTime handler - implements TypeHandlerPlugin protocol"""
+    """DateTime handler - implements TypeHandler Codec"""
 
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return isinstance(obj, (datetime, date, time))
 
-    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> dict[str, str]:
+    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> dict[str, str | None]:
         if isinstance(obj, datetime):
             return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
         elif isinstance(obj, date):
@@ -193,7 +194,7 @@ class SimpleTypeHandler:
 
 
 class PydanticHandler:
-    """Separate Pydantic plugin with enhanced features"""
+    """Pydantic codec for handling advance serialization"""
 
     def __init__(self):
         try:
@@ -219,9 +220,9 @@ class PydanticHandler:
             "__model_data__": obj.dict(),
         }
 
-    def create_parameter_model(self, parameter_types: list[type]):
+    def create_parameter_model(self, parameter_types: Optional[list[type]] = None):
         """Enhanced parameter handling for both positional and keyword args"""
-        if not self.available:
+        if not self.available or parameter_types is None:
             return None
 
         model_fields = {}

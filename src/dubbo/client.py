@@ -15,11 +15,10 @@
 # limitations under the License.
 
 import threading
-from typing import Optional
+from typing import Optional, List, Type
 
 from dubbo.bootstrap import Dubbo
 from dubbo.classes import MethodDescriptor
-from dubbo.codec import DubboTransportService
 from dubbo.configs import ReferenceConfig
 from dubbo.constants import common_constants
 from dubbo.extension import extensionLoader
@@ -33,6 +32,7 @@ from dubbo.types import (
     SerializingFunction,
 )
 from dubbo.url import URL
+from dubbo.codec import DubboSerializationService
 
 __all__ = ["Client"]
 
@@ -88,8 +88,8 @@ class Client:
         self,
         rpc_type: str,
         method_name: str,
-        params_types: list[type],
-        return_type: type,
+        params_types: List[Type],
+        return_type: Type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
@@ -97,12 +97,13 @@ class Client:
         """
         Create RPC callable with the specified type.
         """
+        print("2", params_types)
         # Determine serializers
         if request_serializer and response_deserializer:
             req_ser = request_serializer
             res_deser = response_deserializer
         else:
-            req_ser, res_deser = DubboTransportService.create_serialization_functions(
+            req_ser, res_deser = DubboSerializationService.create_serialization_functions(
                 codec or "json",
                 parameter_types=params_types,
                 return_type=return_type,
@@ -118,7 +119,8 @@ class Client:
 
         return self._callable(descriptor)
 
-    def unary(self, method_name: str, params_types: list[type], return_type: type, **kwargs) -> RpcCallable:
+    def unary(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
+        print("1", params_types)
         return self._create_rpc_callable(
             rpc_type=RpcTypes.UNARY.value,
             method_name=method_name,
@@ -127,7 +129,7 @@ class Client:
             **kwargs,
         )
 
-    def client_stream(self, method_name: str, params_types: list[type], return_type: type, **kwargs) -> RpcCallable:
+    def client_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.CLIENT_STREAM.value,
             method_name=method_name,
@@ -136,7 +138,7 @@ class Client:
             **kwargs,
         )
 
-    def server_stream(self, method_name: str, params_types: list[type], return_type: type, **kwargs) -> RpcCallable:
+    def server_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.SERVER_STREAM.value,
             method_name=method_name,
@@ -145,7 +147,7 @@ class Client:
             **kwargs,
         )
 
-    def bi_stream(self, method_name: str, params_types: list[type], return_type: type, **kwargs) -> RpcCallable:
+    def bi_stream(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
         return self._create_rpc_callable(
             rpc_type=RpcTypes.BI_STREAM.value,
             method_name=method_name,

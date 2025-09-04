@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, Optional
 
 
 class JsonSerializerPlugin(Protocol):
@@ -36,18 +36,18 @@ class SimpleRegistry:
 
     def __init__(self):
         # Simple dict mapping: type -> handler function
-        self.type_handlers: dict[type, Callable] = {}
+        self.type_handlers: dict[type, Callable[..., Any]] = {}
         self.plugins: list[TypeHandlerPlugin] = []
 
-    def register_type_handler(self, obj_type: type, handler: Callable):
+    def register_type_handler(self, obj_type: type, handler: Callable[..., Any]) -> None:
         """Register a simple type handler function"""
         self.type_handlers[obj_type] = handler
 
-    def register_plugin(self, plugin: TypeHandlerPlugin):
+    def register_plugin(self, plugin: TypeHandlerPlugin) -> None:
         """Register a plugin"""
         self.plugins.append(plugin)
 
-    def get_handler(self, obj: Any) -> Callable:
+    def get_handler(self, obj: Any) -> Optional[Callable[..., Any]]:
         """Get handler for object - check dict first, then plugins"""
         obj_type = type(obj)
         if obj_type in self.type_handlers:

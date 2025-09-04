@@ -18,7 +18,7 @@ import inspect
 from typing import Any, Callable, Optional, get_type_hints
 
 from dubbo.classes import MethodDescriptor
-from dubbo.codec import DubboTransportService
+from dubbo.codec import DubboSerializationService
 from dubbo.types import (
     DeserializingFunction,
     RpcTypes,
@@ -68,7 +68,7 @@ class RpcMethodHandler:
         :return: serializer and deserializer functions
         :rtype: Tuple[SerializingFunction, DeserializingFunction]
         """
-        return DubboTransportService.create_serialization_functions(**kwargs)
+        return DubboSerializationService.create_serialization_functions(**kwargs)
 
     @classmethod
     def _infer_types_from_method(cls, method: Callable) -> tuple:

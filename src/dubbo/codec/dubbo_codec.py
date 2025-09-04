@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ParameterDescriptor:
-    """Detailed information about a method parameter"""
+    """Information about a method parameter"""
 
     name: str
     annotation: Any
@@ -34,7 +34,7 @@ class ParameterDescriptor:
 
 @dataclass
 class MethodDescriptor:
-    """Complete method descriptor with all necessary information"""
+    """Method descriptor with function details"""
 
     function: Callable
     name: str
@@ -44,13 +44,16 @@ class MethodDescriptor:
 
 
 class DubboSerializationService:
-    """Dubbo serialization service with robust type handling"""
+    """Dubbo serialization service with type handling"""
 
     @staticmethod
     def create_transport_codec(
-        transport_type: str = "json", parameter_types: list[type] = None, return_type: type = None, **codec_options
+        transport_type: str = "json",
+        parameter_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
+        **codec_options,
     ):
-        """Create transport codec with enhanced parameter structure"""
+        """Create transport codec"""
 
         try:
             from dubbo.classes import CodecHelper
@@ -67,13 +70,19 @@ class DubboSerializationService:
 
     @staticmethod
     def create_encoder_decoder_pair(
-        transport_type: str, parameter_types: list[type] = None, return_type: type = None, **codec_options
+        transport_type: str,
+        parameter_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
+        **codec_options,
     ) -> tuple[Any, Any]:
-        """Create separate encoder and decoder instances"""
+        """Create encoder and decoder instances"""
 
         try:
             codec_instance = DubboSerializationService.create_transport_codec(
-                transport_type=transport_type, parameter_types=parameter_types, return_type=return_type, **codec_options
+                transport_type=transport_type,
+                parameter_types=parameter_types,
+                return_type=return_type,
+                **codec_options,
             )
 
             encoder = codec_instance.get_encoder()
@@ -90,13 +99,19 @@ class DubboSerializationService:
 
     @staticmethod
     def create_serialization_functions(
-        transport_type: str, parameter_types: list[type] = None, return_type: type = None, **codec_options
+        transport_type: str,
+        parameter_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
+        **codec_options,
     ) -> tuple[Callable, Callable]:
-        """Create serializer and deserializer functions for RPC (backward compatibility)"""
+        """Create serializer and deserializer functions"""
 
         try:
             parameter_encoder, return_decoder = DubboSerializationService.create_encoder_decoder_pair(
-                transport_type=transport_type, parameter_types=parameter_types, return_type=return_type, **codec_options
+                transport_type=transport_type,
+                parameter_types=parameter_types,
+                return_type=return_type,
+                **codec_options,
             )
 
             def serialize_method_parameters(*args) -> bytes:
@@ -125,9 +140,9 @@ class DubboSerializationService:
     def create_method_descriptor(
         func: Callable,
         method_name: Optional[str] = None,
-        parameter_types: list[type] = None,
-        return_type: type = None,
-        interface: Callable = None,
+        parameter_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
+        interface: Optional[Callable[..., Any]] = None,
     ) -> MethodDescriptor:
         """Create a method descriptor from function and configuration"""
 
@@ -135,7 +150,7 @@ class DubboSerializationService:
             raise TypeError("func must be callable")
 
         # Use interface signature if provided, otherwise use func signature
-        target_function = interface if interface else func
+        target_function = interface if interface is not None else func
         name = method_name or target_function.__name__
 
         try:
@@ -166,14 +181,17 @@ class DubboSerializationService:
 
             parameters.append(
                 ParameterDescriptor(
-                    name=param_name, annotation=param_type, is_required=is_required, default_value=default_value
+                    name=param_name,
+                    annotation=param_type,
+                    is_required=is_required,
+                    default_value=default_value,
                 )
             )
 
             param_index += 1
 
         # Resolve return type
-        if return_type:
+        if return_type is not None:
             resolved_return_type = return_type
         elif sig.return_annotation != inspect.Signature.empty:
             resolved_return_type = sig.return_annotation

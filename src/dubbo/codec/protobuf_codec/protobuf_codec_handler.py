@@ -31,7 +31,7 @@ except ImportError:
 class SerializationException(Exception):
     """Exception raised when encoding or serialization fails."""
 
-    def __init__(self, message: str, *, cause: Exception = None):
+    def __init__(self, message: str, *, cause: Optional[Exception] = None):
         super().__init__(message)
         self.cause = cause
 
@@ -39,7 +39,7 @@ class SerializationException(Exception):
 class DeserializationException(Exception):
     """Exception raised when decoding or deserialization fails."""
 
-    def __init__(self, message: str, *, cause: Exception = None):
+    def __init__(self, message: str, *, cause: Optional[Exception] = None):
         super().__init__(message)
         self.cause = cause
 
@@ -56,9 +56,9 @@ class ProtobufDecodingFunction(Protocol):
 class ProtobufMethodDescriptor:
     """Protobuf-specific method descriptor for single parameter"""
 
-    parameter_type: type
-    return_type: type
-    protobuf_message_type: type | None = None
+    parameter_type: Optional[type]
+    return_type: Optional[type]
+    protobuf_message_type: Optional[type] = None
 
 
 # Abstract base classes for pluggable architecture
@@ -66,47 +66,33 @@ class TypeHandler(ABC):
     """Abstract base class for type handlers"""
 
     @abstractmethod
-    def is_message(self, obj_type: type) -> bool:
-        """Check if the type is a message type"""
-        pass
+    def is_message(self, obj_type: type) -> bool: ...
 
     @abstractmethod
-    def is_message_instance(self, obj: Any) -> bool:
-        """Check if the object is a message instance"""
-        pass
+    def is_message_instance(self, obj: Any) -> bool: ...
 
     @abstractmethod
-    def is_compatible(self, obj_type: type) -> bool:
-        """Check if the type is compatible with this handler"""
-        pass
+    def is_compatible(self, obj_type: type) -> bool: ...
 
 
 class EncodingStrategy(ABC):
     """Abstract base class for encoding strategies"""
 
     @abstractmethod
-    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
-        """Check if this strategy can encode the given parameter"""
-        pass
+    def can_encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bool: ...
 
     @abstractmethod
-    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
-        """Encode the parameter to bytes"""
-        pass
+    def encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bytes: ...
 
 
 class DecodingStrategy(ABC):
     """Abstract base class for decoding strategies"""
 
     @abstractmethod
-    def can_decode(self, data: bytes, target_type: type) -> bool:
-        """Check if this strategy can decode to the target type"""
-        pass
+    def can_decode(self, data: bytes, target_type: type) -> bool: ...
 
     @abstractmethod
-    def decode(self, data: bytes, target_type: type) -> Any:
-        """Decode the bytes to the target type"""
-        pass
+    def decode(self, data: bytes, target_type: type) -> Any: ...
 
 
 # Concrete implementations
@@ -152,12 +138,12 @@ class MessageEncodingStrategy(EncodingStrategy):
     def __init__(self, type_handler: TypeHandler):
         self.type_handler = type_handler
 
-    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
+    def can_encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bool:
         return self.type_handler.is_message_instance(parameter) or (
-            parameter_type and self.type_handler.is_message(parameter_type)
+            parameter_type is not None and self.type_handler.is_message(parameter_type)
         )
 
-    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
+    def encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bytes:
         if self.type_handler.is_message_instance(parameter):
             return bytes(parameter)
 
@@ -179,10 +165,10 @@ class MessageEncodingStrategy(EncodingStrategy):
 class PrimitiveEncodingStrategy(EncodingStrategy):
     """Encoding strategy for primitive types"""
 
-    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
+    def can_encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bool:
         return isinstance(parameter, (str, int, float, bool, bytes))
 
-    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
+    def encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bytes:
         try:
             json_str = json.dumps({"value": parameter, "type": type(parameter).__name__})
             return json_str.encode("utf-8")
@@ -227,7 +213,12 @@ class PrimitiveDecodingStrategy(DecodingStrategy):
             elif target_type is bool:
                 return bool(value)
             elif target_type is bytes:
-                return bytes(value) if isinstance(value, (list, bytes)) else str(value).encode()
+                if isinstance(value, bytes):
+                    return value
+                elif isinstance(value, list):
+                    return bytes(value)
+                else:
+                    return str(value).encode()
             else:
                 return value
 
@@ -243,22 +234,20 @@ class StrategyRegistry:
         self.decoding_strategies: list[DecodingStrategy] = []
 
     def register_encoding_strategy(self, strategy: EncodingStrategy) -> None:
-        """Register an encoding strategy"""
         self.encoding_strategies.append(strategy)
 
     def register_decoding_strategy(self, strategy: DecodingStrategy) -> None:
-        """Register a decoding strategy"""
         self.decoding_strategies.append(strategy)
 
-    def find_encoding_strategy(self, parameter: Any, parameter_type: type | None = None) -> Optional[EncodingStrategy]:
-        """Find the first strategy that can encode the parameter"""
+    def find_encoding_strategy(
+        self, parameter: Any, parameter_type: Optional[type] = None
+    ) -> Optional[EncodingStrategy]:
         for strategy in self.encoding_strategies:
             if strategy.can_encode(parameter, parameter_type):
                 return strategy
         return None
 
     def find_decoding_strategy(self, data: bytes, target_type: type) -> Optional[DecodingStrategy]:
-        """Find the first strategy that can decode to the target type"""
         for strategy in self.decoding_strategies:
             if strategy.can_decode(data, target_type):
                 return strategy
@@ -270,9 +259,9 @@ class ProtobufTransportEncoder:
 
     def __init__(
         self,
-        parameter_type: type = None,
-        type_handler: TypeHandler = None,
-        strategy_registry: StrategyRegistry = None,
+        parameter_type: Optional[type] = None,
+        type_handler: Optional[TypeHandler] = None,
+        strategy_registry: Optional[StrategyRegistry] = None,
         **kwargs,
     ):
         if not HAS_BETTERPROTO:
@@ -284,40 +273,39 @@ class ProtobufTransportEncoder:
         self.strategy_registry = strategy_registry or self._create_default_registry()
 
     def _create_default_registry(self) -> StrategyRegistry:
-        """Create default strategy registry with standard strategies"""
         registry = StrategyRegistry()
         registry.register_encoding_strategy(MessageEncodingStrategy(self.type_handler))
         registry.register_encoding_strategy(PrimitiveEncodingStrategy())
         return registry
 
-    def encode(self, parameter: Any, parameter_type: type) -> bytes:
+    def encode(self, parameter: Any, parameter_type: Optional[type] = None) -> bytes:
         try:
             if parameter is None:
                 return b""
+
+            effective_type = parameter_type or self.parameter_type
 
             if isinstance(parameter, tuple):
                 if len(parameter) == 0:
                     return b""
                 elif len(parameter) == 1:
-                    return self._encode_single_parameter(parameter[0])
+                    return self._encode_single_parameter(parameter[0], effective_type)
                 else:
                     raise SerializationException(
                         f"Multiple parameters not supported. Got tuple with {len(parameter)} elements, expected 1."
                     )
 
-            return self._encode_single_parameter(parameter)
+            return self._encode_single_parameter(parameter, effective_type)
 
         except Exception as e:
             raise SerializationException(f"Protobuf encoding failed: {e}") from e
 
-    def _encode_single_parameter(self, parameter: Any) -> bytes:
-        strategy = self.strategy_registry.find_encoding_strategy(parameter, self.parameter_type)
+    def _encode_single_parameter(self, parameter: Any, parameter_type: Optional[type]) -> bytes:
+        strategy = self.strategy_registry.find_encoding_strategy(parameter, parameter_type)
         if strategy:
-            return strategy.encode(parameter, self.parameter_type)
-
+            return strategy.encode(parameter, parameter_type)
         raise SerializationException(f"No encoding strategy found for {type(parameter)}")
 
-    # Backward compatibility method
     def _encode_primitive(self, value: Any) -> bytes:
         strategy = PrimitiveEncodingStrategy()
         return strategy.encode(value)
@@ -328,22 +316,19 @@ class ProtobufTransportDecoder:
 
     def __init__(
         self,
-        target_type: type = None,
-        type_handler: TypeHandler = None,
-        strategy_registry: StrategyRegistry = None,
+        target_type: Optional[type] = None,
+        type_handler: Optional[TypeHandler] = None,
+        strategy_registry: Optional[StrategyRegistry] = None,
         **kwargs,
     ):
         if not HAS_BETTERPROTO:
             raise ImportError("betterproto library is required for ProtobufTransportDecoder")
 
         self.target_type = target_type
-
-        # Use provided components or create defaults
         self.type_handler = type_handler or ProtobufTypeHandler()
         self.strategy_registry = strategy_registry or self._create_default_registry()
 
     def _create_default_registry(self) -> StrategyRegistry:
-        """Create default strategy registry with standard strategies"""
         registry = StrategyRegistry()
         registry.register_decoding_strategy(MessageDecodingStrategy(self.type_handler))
         registry.register_decoding_strategy(PrimitiveDecodingStrategy())
@@ -353,12 +338,9 @@ class ProtobufTransportDecoder:
         try:
             if not data:
                 return None
-
             if not self.target_type:
                 raise DeserializationException("No target_type specified for decoding")
-
             return self._decode_single_parameter(data, self.target_type)
-
         except Exception as e:
             raise DeserializationException(f"Protobuf decoding failed: {e}") from e
 
@@ -366,10 +348,8 @@ class ProtobufTransportDecoder:
         strategy = self.strategy_registry.find_decoding_strategy(data, target_type)
         if strategy:
             return strategy.decode(data, target_type)
-
         raise DeserializationException(f"No decoding strategy found for {target_type}")
 
-    # Backward compatibility method
     def _decode_primitive(self, data: bytes, target_type: type) -> Any:
         strategy = PrimitiveDecodingStrategy()
         return strategy.decode(data, target_type)
@@ -380,17 +360,16 @@ class ProtobufTransportCodec:
 
     def __init__(
         self,
-        parameter_type: type = None,
-        return_type: type = None,
-        type_handler: TypeHandler = None,
-        encoder_registry: StrategyRegistry = None,
-        decoder_registry: StrategyRegistry = None,
+        parameter_type: Optional[type] = None,
+        return_type: Optional[type] = None,
+        type_handler: Optional[TypeHandler] = None,
+        encoder_registry: Optional[StrategyRegistry] = None,
+        decoder_registry: Optional[StrategyRegistry] = None,
         **kwargs,
     ):
         if not HAS_BETTERPROTO:
             raise ImportError("betterproto library is required for ProtobufTransportCodec")
 
-        # Allow sharing registries between encoder and decoder, or use separate ones
         shared_registry = encoder_registry or decoder_registry
 
         self._encoder = ProtobufTransportEncoder(
@@ -407,17 +386,14 @@ class ProtobufTransportCodec:
         )
 
     def encode_parameter(self, argument: Any) -> bytes:
-        return self._encoder.encode(argument)
+        return self._encoder.encode(argument, self._encoder.parameter_type)
 
     def encode_parameters(self, arguments: tuple) -> bytes:
         if not arguments:
             return b""
         if len(arguments) == 1:
-            return self._encoder.encode(arguments[0])
-        else:
-            raise SerializationException(
-                f"Multiple parameters not supported. Got {len(arguments)} arguments, expected 1."
-            )
+            return self._encoder.encode(arguments[0], self._encoder.parameter_type)
+        raise SerializationException(f"Multiple parameters not supported. Got {len(arguments)} arguments, expected 1.")
 
     def decode_return_value(self, data: bytes) -> Any:
         return self._decoder.decode(data)
