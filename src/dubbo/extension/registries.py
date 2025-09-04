@@ -24,7 +24,6 @@ from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
 from dubbo.classes import Codec
 from dubbo.codec.json_codec import TypeHandler
-# from dubbo.codec.protobuf_codec import EncodingStrategy, DecodingStrategy
 
 
 @dataclass
