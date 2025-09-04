@@ -39,7 +39,7 @@ class StandardJsonPlugin:
 
 
 class OrJsonPlugin:
-    """orjson plugin - separate from standard json"""
+    """orjson plugin independent implementation"""
 
     def __init__(self):
         try:
@@ -64,15 +64,19 @@ class OrJsonPlugin:
         return self.available
 
     def _default_handler(self, obj):
-        """Handle types that orjson doesn't support natively"""
+        """Handle types not supported natively by orjson"""
         if isinstance(obj, datetime):
             return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
-        elif isinstance(obj, (date, time)):
-            return {"__date__": obj.isoformat()} if isinstance(obj, date) else {"__time__": obj.isoformat()}
+        elif isinstance(obj, date):
+            return {"__date__": obj.isoformat()}
+        elif isinstance(obj, time):
+            return {"__time__": obj.isoformat()}
         elif isinstance(obj, Decimal):
             return {"__decimal__": str(obj)}
-        elif isinstance(obj, (set, frozenset)):
-            return {"__frozenset__" if isinstance(obj, frozenset) else "__set__": list(obj)}
+        elif isinstance(obj, set):
+            return {"__set__": list(obj)}
+        elif isinstance(obj, frozenset):
+            return {"__frozenset__": list(obj)}
         elif isinstance(obj, UUID):
             return {"__uuid__": str(obj)}
         elif isinstance(obj, Path):
@@ -81,7 +85,7 @@ class OrJsonPlugin:
 
 
 class UJsonPlugin:
-    """ujson plugin - separate from others"""
+    """ujson plugin implementation"""
 
     def __init__(self):
         try:
@@ -106,16 +110,31 @@ class UJsonPlugin:
         return self.available
 
     def _default_handler(self, obj):
-        """Same as orjson handler"""
-        return OrJsonPlugin()._default_handler(obj)
+        """Handle types not supported natively by ujson"""
+        if isinstance(obj, datetime):
+            return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
+        elif isinstance(obj, date):
+            return {"__date__": obj.isoformat()}
+        elif isinstance(obj, time):
+            return {"__time__": obj.isoformat()}
+        elif isinstance(obj, Decimal):
+            return {"__decimal__": str(obj)}
+        elif isinstance(obj, set):
+            return {"__set__": list(obj)}
+        elif isinstance(obj, frozenset):
+            return {"__frozenset__": list(obj)}
+        elif isinstance(obj, UUID):
+            return {"__uuid__": str(obj)}
+        elif isinstance(obj, Path):
+            return {"__path__": str(obj)}
+        return {"__fallback__": str(obj), "__type__": type(obj).__name__}
 
 
-# Type Handler Plugins (properly inherit protocol)
 class DateTimeHandler:
     """DateTime handler - implements TypeHandlerPlugin protocol"""
 
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
-        return obj_type in (datetime, date, time)
+        return isinstance(obj, (datetime, date, time))
 
     def serialize_to_dict(self, obj: Union[datetime, date, time]) -> Dict[str, str]:
         if isinstance(obj, datetime):

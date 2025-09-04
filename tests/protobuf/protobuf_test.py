@@ -15,15 +15,14 @@
 # limitations under the License.
 
 import pytest
-from dubbo.codec.protobuf_codec import ProtobufTransportCodec
+from dubbo.codec.protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder
+
+print(type(ProtobufTransportCodec))
 from generated.protobuf_test import GreeterReply, GreeterRequest
 
 
 def test_protobuf_roundtrip_message():
-    codec = ProtobufTransportCodec(
-        parameter_type=GreeterRequest,
-        return_type=GreeterReply
-    )
+    codec = ProtobufTransportCodec(parameter_type=GreeterRequest, return_type=GreeterReply)
 
     # Create a request
     req = GreeterRequest(name="Alice")
@@ -43,26 +42,21 @@ def test_protobuf_roundtrip_message():
 
 
 def test_protobuf_from_dict():
-    codec = ProtobufTransportCodec(
-        parameter_type=GreeterRequest,
-        return_type=GreeterReply
-    )
+    codec = ProtobufTransportCodec(parameter_type=GreeterRequest, return_type=GreeterReply)
 
     # Dict instead of message instance
     encoded = codec.encode_parameter({"name": "Bob"})
     assert isinstance(encoded, bytes)
 
-    # Decode back to message
-    req = codec._decoder.decode(encoded)  # simulate server echo
+    # To decode back to the parameter type, we need a decoder configured for GreeterRequest
+    param_decoder = ProtobufTransportDecoder(target_type=GreeterRequest)
+    req = param_decoder.decode(encoded)
     assert isinstance(req, GreeterRequest)
     assert req.name == "Bob"
 
 
 def test_protobuf_primitive_fallback():
-    codec = ProtobufTransportCodec(
-        parameter_type=str,
-        return_type=str
-    )
+    codec = ProtobufTransportCodec(parameter_type=str, return_type=str)
 
     encoded = codec.encode_parameter("simple string")
     assert isinstance(encoded, bytes)
