@@ -97,14 +97,13 @@ class Client:
         """
         Create RPC callable with the specified type.
         """
-        print("2", params_types)
         # Determine serializers
         if request_serializer and response_deserializer:
             req_ser = request_serializer
             res_deser = response_deserializer
         else:
             req_ser, res_deser = DubboSerializationService.create_serialization_functions(
-                codec or "json",
+                codec,
                 parameter_types=params_types,
                 return_type=return_type,
             )

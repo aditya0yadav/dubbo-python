@@ -14,90 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import importlib
 from dataclasses import dataclass
 from typing import Any
 
-from dubbo.classes import Codec, SingletonBase
-
-# Import all the required interface classes
 from dubbo.cluster import LoadBalance
 from dubbo.compression import Compressor, Decompressor
-from dubbo.extension import registries as registries_module
 from dubbo.protocol import Protocol
 from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
-
-
-class ExtensionError(Exception):
-    """
-    Extension error.
-    """
-
-    def __init__(self, message: str):
-        """
-        Initialize the extension error.
-        :param message: The error message.
-        :type message: str
-        """
-        super().__init__(message)
-
-
-class ExtensionLoader(SingletonBase):
-    """
-    Singleton class for loading extension implementations.
-    """
-
-    def __init__(self):
-        """
-        Initialize the extension loader.
-
-        Load all the registries from the registries module.
-        """
-        if not hasattr(self, "_initialized"):  # Ensure __init__ runs only once
-            self._registries = {}
-            for name in registries_module.registries:
-                registry = getattr(registries_module, name)
-                self._registries[registry.interface] = registry.impls
-            self._initialized = True
-
-    def get_extension(self, interface: Any, impl_name: str) -> Any:
-        """
-        Get the extension implementation for the interface.
-
-        :param interface: Interface class.
-        :type interface: Any
-        :param impl_name: Implementation name.
-        :type impl_name: str
-        :return: Extension implementation class.
-        :rtype: Any
-        :raises ExtensionError: If the interface or implementation is not found.
-        """
-        # Get the registry for the interface
-        impls = self._registries.get(interface)
-        print("value is ", impls, interface)
-        if not impls:
-            raise ExtensionError(f"Interface '{interface.__name__}' is not supported.")
-
-        # Get the full name of the implementation
-        full_name = impls.get(impl_name)
-        if not full_name:
-            raise ExtensionError(f"Implementation '{impl_name}' for interface '{interface.__name__}' is not exist.")
-
-        try:
-            # Split the full name into module and class
-            module_name, class_name = full_name.rsplit(".", 1)
-
-            # Load the module and get the class
-            module = importlib.import_module(module_name)
-            subclass = getattr(module, class_name)
-
-            # Return the subclass
-            return subclass
-        except Exception as e:
-            raise ExtensionError(
-                f"Failed to load extension '{impl_name}' for interface '{interface.__name__}'. \nDetail: {e}"
-            )
+from dubbo.classes import Codec
+from dubbo.codec.json_codec import TypeHandler
+from dubbo.codec.protobuf_codec import EncodingStrategy, DecodingStrategy
 
 
 @dataclass
@@ -123,7 +50,10 @@ registries = [
     "compressorRegistry",
     "decompressorRegistry",
     "transporterRegistry",
+    "encodingHandlerRegistry",
+    "decodingHandlerRegistry",
     "codecRegistry",
+    "typeHandlerRegistry",
 ]
 
 # RegistryFactory registry
@@ -179,11 +109,42 @@ transporterRegistry = ExtendedRegistry(
     },
 )
 
+# Encoding Strategy Registries
+encodingHandlerRegistry = ExtendedRegistry(
+    interface=EncodingStrategy,
+    impls={
+        "message": "dubbo.codec.protobuf_codec.MessageEncodingStrategy",
+        "primitive": "dubbo.codec.protobuf_codec.PrimitiveEncodingStrategy",
+    },
+)
+
+# Decoding Strategy Registries
+decodingHandlerRegistry = ExtendedRegistry(
+    interface=DecodingStrategy,
+    impls={
+        "message": "dubbo.codec.protobuf_codec.MessageDecodingStrategy",
+        "primitive": "dubbo.codec.protobuf_codec.PrimitiveDecodingStrategy",
+    },
+)
+
 # Codec Registry
 codecRegistry = ExtendedRegistry(
     interface=Codec,
     impls={
-        "json": "dubbo.codec.json_codec.JsonTransportCodec",
+        "json": "dubbo.codec.json_codec.JsonTransportCodecBridge",
         "protobuf": "dubbo.codec.protobuf_codec.ProtobufTransportCodec",
+    },
+)
+
+typeHandlerRegistry = ExtendedRegistry(
+    interface=TypeHandler,
+    impls={
+        "datetime": "dubbo.codec.json_codec.DateTimeHandler",
+        "decimal": "dubbo.codec.json_codec.DecimalHandler",
+        "collection": "dubbo.codec.json_codec.CollectionHandler",
+        "enum": "dubbo.codec.json_codec.EnumHandler",
+        "dataclass": "dubbo.codec.json_codec.DataclassHandler",
+        "simple": "dubbo.codec.json_codec.SimpleTypeHandler",
+        "pydantic": "dubbo.codec.json_codec.PydanticHandler",
     },
 )
