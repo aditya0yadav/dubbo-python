@@ -120,7 +120,6 @@ class Client:
         return self._callable(descriptor)
 
     def unary(self, method_name: str, params_types: List[Type], return_type: Type, **kwargs) -> RpcCallable:
-        print("1", params_types)
         return self._create_rpc_callable(
             rpc_type=RpcTypes.UNARY.value,
             method_name=method_name,
