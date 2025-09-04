@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -14,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, List, Dict, Protocol, Callable
+from typing import Any, Callable, Protocol
 
 
 class JsonSerializerPlugin(Protocol):
@@ -37,8 +36,8 @@ class SimpleRegistry:
 
     def __init__(self):
         # Simple dict mapping: type -> handler function
-        self.type_handlers: Dict[type, Callable] = {}
-        self.plugins: List[TypeHandlerPlugin] = []
+        self.type_handlers: dict[type, Callable] = {}
+        self.plugins: list[TypeHandlerPlugin] = []
 
     def register_type_handler(self, obj_type: type, handler: Callable):
         """Register a simple type handler function"""

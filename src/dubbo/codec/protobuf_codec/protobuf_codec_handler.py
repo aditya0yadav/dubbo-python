@@ -8,16 +8,16 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an "AS IS"
+# BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Type, Protocol, Dict, Optional
-from dataclasses import dataclass
 import json
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Optional, Protocol
 
 # Betterproto imports
 try:
@@ -56,9 +56,9 @@ class ProtobufDecodingFunction(Protocol):
 class ProtobufMethodDescriptor:
     """Protobuf-specific method descriptor for single parameter"""
 
-    parameter_type: Type
-    return_type: Type
-    protobuf_message_type: Type = None
+    parameter_type: type
+    return_type: type
+    protobuf_message_type: type | None = None
 
 
 # Abstract base classes for pluggable architecture
@@ -66,7 +66,7 @@ class TypeHandler(ABC):
     """Abstract base class for type handlers"""
 
     @abstractmethod
-    def is_message(self, obj_type: Type) -> bool:
+    def is_message(self, obj_type: type) -> bool:
         """Check if the type is a message type"""
         pass
 
@@ -76,7 +76,7 @@ class TypeHandler(ABC):
         pass
 
     @abstractmethod
-    def is_compatible(self, obj_type: Type) -> bool:
+    def is_compatible(self, obj_type: type) -> bool:
         """Check if the type is compatible with this handler"""
         pass
 
@@ -85,12 +85,12 @@ class EncodingStrategy(ABC):
     """Abstract base class for encoding strategies"""
 
     @abstractmethod
-    def can_encode(self, parameter: Any, parameter_type: Type = None) -> bool:
+    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
         """Check if this strategy can encode the given parameter"""
         pass
 
     @abstractmethod
-    def encode(self, parameter: Any, parameter_type: Type = None) -> bytes:
+    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
         """Encode the parameter to bytes"""
         pass
 
@@ -99,12 +99,12 @@ class DecodingStrategy(ABC):
     """Abstract base class for decoding strategies"""
 
     @abstractmethod
-    def can_decode(self, data: bytes, target_type: Type) -> bool:
+    def can_decode(self, data: bytes, target_type: type) -> bool:
         """Check if this strategy can decode to the target type"""
         pass
 
     @abstractmethod
-    def decode(self, data: bytes, target_type: Type) -> Any:
+    def decode(self, data: bytes, target_type: type) -> Any:
         """Decode the bytes to the target type"""
         pass
 
@@ -113,7 +113,7 @@ class DecodingStrategy(ABC):
 class ProtobufTypeHandler(TypeHandler):
     """Handles type conversion between Python types and Betterproto"""
 
-    def is_message(self, obj_type: Type) -> bool:
+    def is_message(self, obj_type: type) -> bool:
         if not HAS_BETTERPROTO:
             return False
         try:
@@ -126,12 +126,12 @@ class ProtobufTypeHandler(TypeHandler):
             return False
         return isinstance(obj, betterproto.Message)
 
-    def is_compatible(self, obj_type: Type) -> bool:
+    def is_compatible(self, obj_type: type) -> bool:
         return obj_type in (str, int, float, bool, bytes) or self.is_message(obj_type)
 
     # Static methods for backward compatibility
     @staticmethod
-    def is_betterproto_message(obj_type: Type) -> bool:
+    def is_betterproto_message(obj_type: type) -> bool:
         handler = ProtobufTypeHandler()
         return handler.is_message(obj_type)
 
@@ -141,7 +141,7 @@ class ProtobufTypeHandler(TypeHandler):
         return handler.is_message_instance(obj)
 
     @staticmethod
-    def is_protobuf_compatible(obj_type: Type) -> bool:
+    def is_protobuf_compatible(obj_type: type) -> bool:
         handler = ProtobufTypeHandler()
         return handler.is_compatible(obj_type)
 
@@ -152,12 +152,12 @@ class MessageEncodingStrategy(EncodingStrategy):
     def __init__(self, type_handler: TypeHandler):
         self.type_handler = type_handler
 
-    def can_encode(self, parameter: Any, parameter_type: Type = None) -> bool:
+    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
         return self.type_handler.is_message_instance(parameter) or (
             parameter_type and self.type_handler.is_message(parameter_type)
         )
 
-    def encode(self, parameter: Any, parameter_type: Type = None) -> bytes:
+    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
         if self.type_handler.is_message_instance(parameter):
             return bytes(parameter)
 
@@ -179,10 +179,10 @@ class MessageEncodingStrategy(EncodingStrategy):
 class PrimitiveEncodingStrategy(EncodingStrategy):
     """Encoding strategy for primitive types"""
 
-    def can_encode(self, parameter: Any, parameter_type: Type = None) -> bool:
+    def can_encode(self, parameter: Any, parameter_type: type | None = None) -> bool:
         return isinstance(parameter, (str, int, float, bool, bytes))
 
-    def encode(self, parameter: Any, parameter_type: Type = None) -> bytes:
+    def encode(self, parameter: Any, parameter_type: type | None = None) -> bytes:
         try:
             json_str = json.dumps({"value": parameter, "type": type(parameter).__name__})
             return json_str.encode("utf-8")
@@ -196,10 +196,10 @@ class MessageDecodingStrategy(DecodingStrategy):
     def __init__(self, type_handler: TypeHandler):
         self.type_handler = type_handler
 
-    def can_decode(self, data: bytes, target_type: Type) -> bool:
+    def can_decode(self, data: bytes, target_type: type) -> bool:
         return self.type_handler.is_message(target_type)
 
-    def decode(self, data: bytes, target_type: Type) -> Any:
+    def decode(self, data: bytes, target_type: type) -> Any:
         try:
             return target_type().parse(data)
         except Exception as e:
@@ -209,24 +209,24 @@ class MessageDecodingStrategy(DecodingStrategy):
 class PrimitiveDecodingStrategy(DecodingStrategy):
     """Decoding strategy for primitive types"""
 
-    def can_decode(self, data: bytes, target_type: Type) -> bool:
+    def can_decode(self, data: bytes, target_type: type) -> bool:
         return target_type in (str, int, float, bool, bytes)
 
-    def decode(self, data: bytes, target_type: Type) -> Any:
+    def decode(self, data: bytes, target_type: type) -> Any:
         try:
             json_str = data.decode("utf-8")
             parsed = json.loads(json_str)
             value = parsed.get("value")
 
-            if target_type == str:
+            if target_type is str:
                 return str(value)
-            elif target_type == int:
+            elif target_type is int:
                 return int(value)
-            elif target_type == float:
+            elif target_type is float:
                 return float(value)
-            elif target_type == bool:
+            elif target_type is bool:
                 return bool(value)
-            elif target_type == bytes:
+            elif target_type is bytes:
                 return bytes(value) if isinstance(value, (list, bytes)) else str(value).encode()
             else:
                 return value
@@ -250,14 +250,14 @@ class StrategyRegistry:
         """Register a decoding strategy"""
         self.decoding_strategies.append(strategy)
 
-    def find_encoding_strategy(self, parameter: Any, parameter_type: Type = None) -> Optional[EncodingStrategy]:
+    def find_encoding_strategy(self, parameter: Any, parameter_type: type | None = None) -> Optional[EncodingStrategy]:
         """Find the first strategy that can encode the parameter"""
         for strategy in self.encoding_strategies:
             if strategy.can_encode(parameter, parameter_type):
                 return strategy
         return None
 
-    def find_decoding_strategy(self, data: bytes, target_type: Type) -> Optional[DecodingStrategy]:
+    def find_decoding_strategy(self, data: bytes, target_type: type) -> Optional[DecodingStrategy]:
         """Find the first strategy that can decode to the target type"""
         for strategy in self.decoding_strategies:
             if strategy.can_decode(data, target_type):
@@ -270,7 +270,7 @@ class ProtobufTransportEncoder:
 
     def __init__(
         self,
-        parameter_type: Type = None,
+        parameter_type: type = None,
         type_handler: TypeHandler = None,
         strategy_registry: StrategyRegistry = None,
         **kwargs,
@@ -290,7 +290,7 @@ class ProtobufTransportEncoder:
         registry.register_encoding_strategy(PrimitiveEncodingStrategy())
         return registry
 
-    def encode(self, parameter: Any, parameter_type: Type) -> bytes:
+    def encode(self, parameter: Any, parameter_type: type) -> bytes:
         try:
             if parameter is None:
                 return b""
@@ -328,7 +328,7 @@ class ProtobufTransportDecoder:
 
     def __init__(
         self,
-        target_type: Type = None,
+        target_type: type = None,
         type_handler: TypeHandler = None,
         strategy_registry: StrategyRegistry = None,
         **kwargs,
@@ -362,7 +362,7 @@ class ProtobufTransportDecoder:
         except Exception as e:
             raise DeserializationException(f"Protobuf decoding failed: {e}") from e
 
-    def _decode_single_parameter(self, data: bytes, target_type: Type) -> Any:
+    def _decode_single_parameter(self, data: bytes, target_type: type) -> Any:
         strategy = self.strategy_registry.find_decoding_strategy(data, target_type)
         if strategy:
             return strategy.decode(data, target_type)
@@ -370,7 +370,7 @@ class ProtobufTransportDecoder:
         raise DeserializationException(f"No decoding strategy found for {target_type}")
 
     # Backward compatibility method
-    def _decode_primitive(self, data: bytes, target_type: Type) -> Any:
+    def _decode_primitive(self, data: bytes, target_type: type) -> Any:
         strategy = PrimitiveDecodingStrategy()
         return strategy.decode(data, target_type)
 
@@ -380,8 +380,8 @@ class ProtobufTransportCodec:
 
     def __init__(
         self,
-        parameter_type: Type = None,
-        return_type: Type = None,
+        parameter_type: type = None,
+        return_type: type = None,
         type_handler: TypeHandler = None,
         encoder_registry: StrategyRegistry = None,
         decoder_registry: StrategyRegistry = None,

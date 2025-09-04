@@ -16,8 +16,9 @@
 
 import abc
 import threading
-from typing import Any, Callable, Optional, Union, Type
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Optional, Union
+
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction
 
 __all__ = [
@@ -248,7 +249,7 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
 
 
 class Codec(ABC):
-    def __init__(self, model_type: Optional[Type[Any]] = None, **kwargs):
+    def __init__(self, model_type: Optional[type[Any]] = None, **kwargs):
         self.model_type = model_type
 
     @abstractmethod

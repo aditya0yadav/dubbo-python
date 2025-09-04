@@ -8,21 +8,21 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 
 import json
-from typing import Any, Type, List, Union, Dict
-from datetime import datetime, date, time
+from dataclasses import asdict, is_dataclass
+from datetime import date, datetime, time
 from decimal import Decimal
-from pathlib import Path
-from uuid import UUID
 from enum import Enum
-from dataclasses import is_dataclass, asdict
-from typing import Any, Dict, List
+from pathlib import Path
+from typing import Any, Union
+from uuid import UUID
 
 
 class StandardJsonPlugin:
@@ -136,7 +136,7 @@ class DateTimeHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return isinstance(obj, (datetime, date, time))
 
-    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> Dict[str, str]:
+    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> dict[str, str]:
         if isinstance(obj, datetime):
             return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
         elif isinstance(obj, date):
@@ -149,7 +149,7 @@ class DecimalHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return obj_type is Decimal
 
-    def serialize_to_dict(self, obj: Decimal) -> Dict[str, str]:
+    def serialize_to_dict(self, obj: Decimal) -> dict[str, str]:
         return {"__decimal__": str(obj)}
 
 
@@ -157,7 +157,7 @@ class CollectionHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return obj_type in (set, frozenset)
 
-    def serialize_to_dict(self, obj: Union[set, frozenset]) -> Dict[str, List]:
+    def serialize_to_dict(self, obj: Union[set, frozenset]) -> dict[str, list]:
         return {"__frozenset__" if isinstance(obj, frozenset) else "__set__": list(obj)}
 
 
@@ -167,7 +167,7 @@ class EnumHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return isinstance(obj, Enum)
 
-    def serialize_to_dict(self, obj: Enum) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Enum) -> dict[str, Any]:
         return {"__enum__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "value": obj.value}
 
 
@@ -177,7 +177,7 @@ class DataclassHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return is_dataclass(obj)
 
-    def serialize_to_dict(self, obj: Any) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Any) -> dict[str, Any]:
         return {"__dataclass__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "fields": asdict(obj)}
 
 
@@ -185,7 +185,7 @@ class SimpleTypeHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return obj_type in (UUID, Path) or isinstance(obj, Path)
 
-    def serialize_to_dict(self, obj: Union[UUID, Path]) -> Dict[str, str]:
+    def serialize_to_dict(self, obj: Union[UUID, Path]) -> dict[str, str]:
         if isinstance(obj, UUID):
             return {"__uuid__": str(obj)}
         elif isinstance(obj, Path):
@@ -208,7 +208,7 @@ class PydanticHandler:
     def can_serialize_type(self, obj: Any, obj_type: type) -> bool:
         return self.available and isinstance(obj, self.BaseModel)
 
-    def serialize_to_dict(self, obj) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj) -> dict[str, Any]:
         if hasattr(obj, "model_dump"):
             return {
                 "__pydantic_model__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}",
@@ -219,7 +219,7 @@ class PydanticHandler:
             "__model_data__": obj.dict(),
         }
 
-    def create_parameter_model(self, parameter_types: List[Type]):
+    def create_parameter_model(self, parameter_types: list[type]):
         """Enhanced parameter handling for both positional and keyword args"""
         if not self.available:
             return None

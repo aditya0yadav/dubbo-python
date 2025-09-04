@@ -15,7 +15,8 @@
 # limitations under the License.
 
 import inspect
-from typing import Callable, Optional, List, Type, Any, get_type_hints
+from typing import Any, Callable, Optional, get_type_hints
+
 from dubbo.classes import MethodDescriptor
 from dubbo.codec import DubboTransportService
 from dubbo.types import (
@@ -76,7 +77,7 @@ class RpcMethodHandler:
         :param method: the method to analyze
         :type method: Callable
         :return: tuple of method name, parameter types, return type
-        :rtype: Tuple[str, List[Type], Type]
+        :rtype: Tuple[str, list[type], type]
         """
         try:
             type_hints = get_type_hints(method)
@@ -105,8 +106,8 @@ class RpcMethodHandler:
         cls,
         method: Callable,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         rpc_type: str,
         codec: Optional[str] = None,
         param_encoder: Optional[DeserializingFunction] = None,
@@ -151,8 +152,8 @@ class RpcMethodHandler:
         cls,
         method: Callable,
         method_name: Optional[str] = None,
-        params_types: Optional[List[Type]] = None,
-        return_type: Optional[Type] = None,
+        params_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
         codec: Optional[str] = None,
         request_deserializer: Optional[DeserializingFunction] = None,
         response_serializer: Optional[SerializingFunction] = None,
@@ -160,15 +161,6 @@ class RpcMethodHandler:
     ) -> "RpcMethodHandler":
         """
         Register a unary RPC method handler
-        :param method: the callable function
-        :param method_name: RPC method name
-        :param params_types: input types
-        :param return_type: output type
-        :param codec: serialization codec
-        :param request_deserializer: custom deserializer
-        :param response_serializer: custom serializer
-        :return: RpcMethodHandler instance
-        :rtype: RpcMethodHandler
         """
         inferred_name, inferred_param_types, inferred_return_type = cls._infer_types_from_method(method)
         resolved_method_name = method_name or inferred_name
@@ -195,8 +187,8 @@ class RpcMethodHandler:
         cls,
         method: Callable,
         method_name: Optional[str] = None,
-        params_types: Optional[List[Type]] = None,
-        return_type: Optional[Type] = None,
+        params_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
         codec: Optional[str] = None,
         request_deserializer: Optional[DeserializingFunction] = None,
         response_serializer: Optional[SerializingFunction] = None,
@@ -204,15 +196,6 @@ class RpcMethodHandler:
     ) -> "RpcMethodHandler":
         """
         Register a client-streaming RPC method handler
-        :param method: the callable function
-        :param method_name: RPC method name
-        :param params_types: input types
-        :param return_type: output type
-        :param codec: serialization codec
-        :param request_deserializer: custom deserializer
-        :param response_serializer: custom serializer
-        :return: RpcMethodHandler instance
-        :rtype: RpcMethodHandler
         """
         inferred_name, inferred_param_types, inferred_return_type = cls._infer_types_from_method(method)
         resolved_method_name = method_name or inferred_name
@@ -239,8 +222,8 @@ class RpcMethodHandler:
         cls,
         method: Callable,
         method_name: Optional[str] = None,
-        params_types: Optional[List[Type]] = None,
-        return_type: Optional[Type] = None,
+        params_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
         codec: Optional[str] = None,
         request_deserializer: Optional[DeserializingFunction] = None,
         response_serializer: Optional[SerializingFunction] = None,
@@ -248,15 +231,6 @@ class RpcMethodHandler:
     ) -> "RpcMethodHandler":
         """
         Register a server-streaming RPC method handler
-        :param method: the callable function
-        :param method_name: RPC method name
-        :param params_types: input types
-        :param return_type: output type
-        :param codec: serialization codec
-        :param request_deserializer: custom deserializer
-        :param response_serializer: custom serializer
-        :return: RpcMethodHandler instance
-        :rtype: RpcMethodHandler
         """
         inferred_name, inferred_param_types, inferred_return_type = cls._infer_types_from_method(method)
         resolved_method_name = method_name or inferred_name
@@ -283,8 +257,8 @@ class RpcMethodHandler:
         cls,
         method: Callable,
         method_name: Optional[str] = None,
-        params_types: Optional[List[Type]] = None,
-        return_type: Optional[Type] = None,
+        params_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
         codec: Optional[str] = None,
         request_deserializer: Optional[DeserializingFunction] = None,
         response_serializer: Optional[SerializingFunction] = None,
@@ -292,15 +266,6 @@ class RpcMethodHandler:
     ) -> "RpcMethodHandler":
         """
         Register a bidirectional streaming RPC method handler
-        :param method: the callable function
-        :param method_name: RPC method name
-        :param params_types: input types
-        :param return_type: output type
-        :param codec: serialization codec
-        :param request_deserializer: custom deserializer
-        :param response_serializer: custom serializer
-        :return: RpcMethodHandler instance
-        :rtype: RpcMethodHandler
         """
         inferred_name, inferred_param_types, inferred_return_type = cls._infer_types_from_method(method)
         resolved_method_name = method_name or inferred_name
@@ -330,13 +295,9 @@ class RpcServiceHandler:
 
     __slots__ = ["_service_name", "_method_handlers"]
 
-    def __init__(self, service_name: str, method_handlers: List[RpcMethodHandler]):
+    def __init__(self, service_name: str, method_handlers: list[RpcMethodHandler]):
         """
         Initialize the RpcServiceHandler
-        :param service_name: the name of the service.
-        :type service_name: str
-        :param method_handlers: list of RpcMethodHandler instances
-        :type method_handlers: List[RpcMethodHandler]
         """
         self._service_name = service_name
         self._method_handlers: dict[str, RpcMethodHandler] = {}
@@ -347,18 +308,10 @@ class RpcServiceHandler:
 
     @property
     def service_name(self) -> str:
-        """
-        Get the service name
-        :return: the service name
-        :rtype: str
-        """
+        """Get the service name"""
         return self._service_name
 
     @property
     def method_handlers(self) -> dict[str, RpcMethodHandler]:
-        """
-        Get the registered RPC method handlers
-        :return: mapping of method names to handlers
-        :rtype: Dict[str, RpcMethodHandler]
-        """
+        """Get the registered RPC method handlers"""
         return self._method_handlers

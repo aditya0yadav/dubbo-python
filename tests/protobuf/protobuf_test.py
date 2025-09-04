@@ -14,11 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-from dubbo.codec.protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder
-
-print(type(ProtobufTransportCodec))
 from generated.protobuf_test import GreeterReply, GreeterRequest
+
+from dubbo.codec.protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder
 
 
 def test_protobuf_roundtrip_message():

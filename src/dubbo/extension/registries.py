@@ -15,22 +15,18 @@
 # limitations under the License.
 
 import importlib
-from typing import Any
 from dataclasses import dataclass
+from typing import Any
 
-from dubbo.classes import SingletonBase
-from dubbo.extension import registries as registries_module
+from dubbo.classes import Codec, SingletonBase
 
 # Import all the required interface classes
-from dataclasses import dataclass
-from typing import Any
-
 from dubbo.cluster import LoadBalance
 from dubbo.compression import Compressor, Decompressor
+from dubbo.extension import registries as registries_module
 from dubbo.protocol import Protocol
 from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
-from dubbo.classes import Codec
 
 
 class ExtensionError(Exception):
