@@ -24,7 +24,7 @@ from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
 from dubbo.classes import Codec
 from dubbo.codec.json_codec import TypeHandler
-from dubbo.codec.protobuf_codec import EncodingStrategy, DecodingStrategy
+# from dubbo.codec.protobuf_codec import EncodingStrategy, DecodingStrategy
 
 
 @dataclass
@@ -50,8 +50,6 @@ registries = [
     "compressorRegistry",
     "decompressorRegistry",
     "transporterRegistry",
-    "encodingHandlerRegistry",
-    "decodingHandlerRegistry",
     "codecRegistry",
     "typeHandlerRegistry",
 ]
@@ -109,24 +107,6 @@ transporterRegistry = ExtendedRegistry(
     },
 )
 
-# Encoding Strategy Registries
-encodingHandlerRegistry = ExtendedRegistry(
-    interface=EncodingStrategy,
-    impls={
-        "message": "dubbo.codec.protobuf_codec.MessageEncodingStrategy",
-        "primitive": "dubbo.codec.protobuf_codec.PrimitiveEncodingStrategy",
-    },
-)
-
-# Decoding Strategy Registries
-decodingHandlerRegistry = ExtendedRegistry(
-    interface=DecodingStrategy,
-    impls={
-        "message": "dubbo.codec.protobuf_codec.MessageDecodingStrategy",
-        "primitive": "dubbo.codec.protobuf_codec.PrimitiveDecodingStrategy",
-    },
-)
-
 # Codec Registry
 codecRegistry = ExtendedRegistry(
     interface=Codec,
@@ -136,6 +116,7 @@ codecRegistry = ExtendedRegistry(
     },
 )
 
+# TypeHandler registry
 typeHandlerRegistry = ExtendedRegistry(
     interface=TypeHandler,
     impls={

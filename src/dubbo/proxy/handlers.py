@@ -85,6 +85,7 @@ class RpcMethodHandler:
             method_name = method.__name__
             params = list(sig.parameters.values())
 
+            # Check for 'self' parameter which indicates an unbound method
             if params and params[0].name == "self":
                 raise RpcMethodConfigurationError(
                     f"Method '{method_name}' appears to be an unbound method with 'self' parameter. "
@@ -93,6 +94,7 @@ class RpcMethodHandler:
                     "RpcMethodHandler.unary(instance.method) not RpcMethodHandler.unary(Class.method)"
                 )
 
+            # For bound methods or standalone functions, all parameters are RPC parameters
             params_types = [type_hints.get(p.name, Any) for p in params]
             return_type = type_hints.get("return", Any)
             return method_name, params_types, return_type

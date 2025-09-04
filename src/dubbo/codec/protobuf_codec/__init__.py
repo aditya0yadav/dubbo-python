@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .protobuf_codec_handler import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
+from .protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
 
 __all__ = [
     "ProtobufTransportCodec",

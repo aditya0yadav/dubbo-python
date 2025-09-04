@@ -14,10 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import inspect
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, List, Tuple
+
+__all__ = [
+    "ParameterDescriptor",
+    "MethodDescriptor",
+    "TransportCodec",
+    "SerializationEncoder",
+    "SerializationDecoder",
+    "DubboSerializationService",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +48,77 @@ class MethodDescriptor:
 
     function: Callable
     name: str
-    parameters: list[ParameterDescriptor]
+    parameters: List[ParameterDescriptor]
     return_parameter: ParameterDescriptor
     documentation: Optional[str] = None
+
+
+class TransportCodec(abc.ABC):
+    """
+    The transport codec interface.
+    """
+
+    @classmethod
+    @abc.abstractmethod
+    def get_transport_type(cls) -> str:
+        """
+        Get transport type of current codec
+        :return: The transport type.
+        :rtype: str
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_encoder(self) -> "SerializationEncoder":
+        """
+        Get encoder instance
+        :return: The encoder.
+        :rtype: SerializationEncoder
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_decoder(self) -> "SerializationDecoder":
+        """
+        Get decoder instance
+        :return: The decoder.
+        :rtype: SerializationDecoder
+        """
+        raise NotImplementedError()
+
+
+class SerializationEncoder(abc.ABC):
+    """
+    The serialization encoder interface.
+    """
+
+    @abc.abstractmethod
+    def encode(self, arguments: Tuple[Any, ...]) -> bytes:
+        """
+        Encode arguments to bytes.
+        :param arguments: The arguments to encode.
+        :type arguments: Tuple[Any, ...]
+        :return: The encoded bytes.
+        :rtype: bytes
+        """
+        raise NotImplementedError()
+
+
+class SerializationDecoder(abc.ABC):
+    """
+    The serialization decoder interface.
+    """
+
+    @abc.abstractmethod
+    def decode(self, data: bytes) -> Any:
+        """
+        Decode bytes to object.
+        :param data: The data to decode.
+        :type data: bytes
+        :return: The decoded object.
+        :rtype: Any
+        """
+        raise NotImplementedError()
 
 
 class DubboSerializationService:
@@ -49,12 +127,21 @@ class DubboSerializationService:
     @staticmethod
     def create_transport_codec(
         transport_type: str = "json",
-        parameter_types: Optional[list[type]] = None,
+        parameter_types: Optional[List[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
-    ):
-        """Create transport codec"""
+    ) -> TransportCodec:
+        """
+        Create transport codec
 
+        :param transport_type: The transport type (e.g., 'json', 'protobuf')
+        :param parameter_types: List of parameter types
+        :param return_type: Return value type
+        :param codec_options: Additional codec options
+        :return: Transport codec instance
+        :raises ImportError: If required modules cannot be imported
+        :raises Exception: If codec creation fails
+        """
         try:
             from dubbo.classes import CodecHelper
             from dubbo.extension.extension_loader import ExtensionLoader
@@ -71,12 +158,21 @@ class DubboSerializationService:
     @staticmethod
     def create_encoder_decoder_pair(
         transport_type: str,
-        parameter_types: Optional[list[type]] = None,
+        parameter_types: Optional[List[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
-    ) -> tuple[Any, Any]:
-        """Create encoder and decoder instances"""
+    ) -> Tuple[SerializationEncoder, SerializationDecoder]:
+        """
+        Create encoder and decoder instances
 
+        :param transport_type: The transport type
+        :param parameter_types: List of parameter types
+        :param return_type: Return value type
+        :param codec_options: Additional codec options
+        :return: Tuple of (encoder, decoder)
+        :raises ValueError: If codec returns None encoder/decoder
+        :raises Exception: If creation fails
+        """
         try:
             codec_instance = DubboSerializationService.create_transport_codec(
                 transport_type=transport_type,
@@ -85,8 +181,8 @@ class DubboSerializationService:
                 **codec_options,
             )
 
-            encoder = codec_instance.get_encoder()
-            decoder = codec_instance.get_decoder()
+            encoder = codec_instance.encoder()
+            decoder = codec_instance.decoder()
 
             if encoder is None or decoder is None:
                 raise ValueError(f"Codec for transport type '{transport_type}' returned None encoder/decoder")
@@ -100,12 +196,20 @@ class DubboSerializationService:
     @staticmethod
     def create_serialization_functions(
         transport_type: str,
-        parameter_types: Optional[list[type]] = None,
+        parameter_types: Optional[List[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
-    ) -> tuple[Callable, Callable]:
-        """Create serializer and deserializer functions"""
+    ) -> Tuple[Callable[..., bytes], Callable[[bytes], Any]]:
+        """
+        Create serializer and deserializer functions
 
+        :param transport_type: The transport type
+        :param parameter_types: List of parameter types
+        :param return_type: Return value type
+        :param codec_options: Additional codec options
+        :return: Tuple of (serializer_function, deserializer_function)
+        :raises Exception: If creation fails
+        """
         try:
             parameter_encoder, return_decoder = DubboSerializationService.create_encoder_decoder_pair(
                 transport_type=transport_type,
@@ -115,13 +219,15 @@ class DubboSerializationService:
             )
 
             def serialize_method_parameters(*args) -> bytes:
+                """Serialize method parameters to bytes"""
                 try:
                     return parameter_encoder.encode(args)
                 except Exception as e:
                     logger.error("Failed to serialize parameters: %s", e)
                     raise
 
-            def deserialize_method_return(data: bytes):
+            def deserialize_method_return(data: bytes) -> Any:
+                """Deserialize bytes to return value"""
                 if not isinstance(data, bytes):
                     raise TypeError(f"Expected bytes, got {type(data)}")
                 try:
@@ -140,12 +246,22 @@ class DubboSerializationService:
     def create_method_descriptor(
         func: Callable,
         method_name: Optional[str] = None,
-        parameter_types: Optional[list[type]] = None,
+        parameter_types: Optional[List[type]] = None,
         return_type: Optional[type] = None,
         interface: Optional[Callable[..., Any]] = None,
     ) -> MethodDescriptor:
-        """Create a method descriptor from function and configuration"""
+        """
+        Create a method descriptor from function and configuration
 
+        :param func: The function to create descriptor for
+        :param method_name: Override method name
+        :param parameter_types: Override parameter types
+        :param return_type: Override return type
+        :param interface: Interface to use for signature inspection
+        :return: Method descriptor
+        :raises TypeError: If func is not callable
+        :raises ValueError: If signature cannot be inspected
+        """
         if not callable(func):
             raise TypeError("func must be callable")
 
