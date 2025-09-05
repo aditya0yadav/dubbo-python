@@ -16,13 +16,18 @@
 
 from .protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
 from .protobuf_base import ProtobufEncoder, ProtobufDecoder
-from .betterproto_handler import BetterprotoMessageHandler, PrimitiveHandler
+from .betterproto_handler import BetterprotoMessageHandler
+from .protoc_handler import GoogleProtobufMessageHandler
+from .primitive_handler import PrimitiveHandler
 
 __all__ = [
     "ProtobufTransportCodec",
     "ProtobufTransportDecoder",
     "ProtobufTransportEncoder",
     "ProtobufEncoder",
-    "ProtobufDecoderBetterprotoMessageHandler",
+    "ProtobufDecoder",
+    "BetterprotoMessageHandler",
+    "PrimitiveHandler",
+    "GoogleProtobufMessageHandler",
     "PrimitiveHandler",
 ]

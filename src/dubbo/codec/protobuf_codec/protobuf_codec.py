@@ -17,7 +17,6 @@
 from typing import Any, Optional, List
 
 from .protobuf_base import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
-from .protobuf_base import ProtobufEncoder
 
 __all__ = ["ProtobufTransportCodec"]
 
@@ -83,8 +82,7 @@ class ProtobufTransportDecoder:
 
 class ProtobufTransportCodec:
     """
-    Main protobuf codec class compatible with extension loader.
-    This class provides encoder() and decoder() methods as expected by the extension loader.
+    Main protobuf codec class
     """
 
     def __init__(
@@ -107,35 +105,36 @@ class ProtobufTransportCodec:
         """Load default encoding and decoding handlers"""
         from dubbo.extension import extensionLoader
 
+        # Try BetterProto handler
         try:
-            # Try to load BetterProto handler
-            name = "message"
-            message_handler = extensionLoader.get_extension(ProtobufEncoder, name)
-            betterproto_handler = message_handler()
+            betterproto_handler = extensionLoader.get_extension(ProtobufEncoder, "betterproto")()
             self._encoders.append(betterproto_handler)
             self._decoders.append(betterproto_handler)
         except ImportError:
             print("Warning: BetterProto handler not available")
 
-        # Load primitive handler
-        from dubbo.extension import extensionLoader
+        # Try Google Protoc handler
+        try:
+            protoc_handler = extensionLoader.get_extension(ProtobufEncoder, "googleproto")()
+            self._encoders.append(protoc_handler)
+            self._decoders.append(protoc_handler)
+        except ImportError:
+            print("Warning: Protoc handler not available")
 
-        name = "primitive"
-        primitive_handler = extensionLoader.get_extension(ProtobufEncoder, name)()
+        # Always load primitive handler
+        primitive_handler = extensionLoader.get_extension(ProtobufEncoder, "primitive")()
         self._encoders.append(primitive_handler)
         self._decoders.append(primitive_handler)
 
     def encoder(self) -> ProtobufTransportEncoder:
         """
         Create and return an encoder instance.
-        This method is called by the extension loader / DubboSerializationService.
         """
         return ProtobufTransportEncoder(self._encoders, self._parameter_types)
 
     def decoder(self) -> ProtobufTransportDecoder:
         """
         Create and return a decoder instance.
-        This method is called by the extension loader / DubboSerializationService.
         """
         return ProtobufTransportDecoder(self._decoders, self._return_type)
 
