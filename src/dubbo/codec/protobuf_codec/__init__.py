@@ -23,7 +23,6 @@ __all__ = [
     "ProtobufTransportDecoder",
     "ProtobufTransportEncoder",
     "ProtobufEncoder",
-    "ProtobufDecoder"
-    "BetterprotoMessageHandler",
-    "PrimitiveHandler"
+    "ProtobufDecoderBetterprotoMessageHandler",
+    "PrimitiveHandler",
 ]

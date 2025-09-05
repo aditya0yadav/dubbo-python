@@ -52,7 +52,7 @@ registries = [
     "transporterRegistry",
     "codecRegistry",
     "typeHandlerRegistry",
-    "betterprotoRegistry"
+    "betterprotoRegistry",
 ]
 
 # RegistryFactory registry
@@ -121,9 +121,9 @@ codecRegistry = ExtendedRegistry(
 betterprotoRegistry = ExtendedRegistry(
     interface=ProtobufEncoder,
     impls={
-        "message" : "dubbo.codec.protobuf_codec.BetterprotoMessageHandler",
-        "primitive" : "dubbo.codec.protobuf_codec.PrimitiveHandler",
-    }
+        "message": "dubbo.codec.protobuf_codec.BetterprotoMessageHandler",
+        "primitive": "dubbo.codec.protobuf_codec.PrimitiveHandler",
+    },
 )
 
 # TypeHandler registry

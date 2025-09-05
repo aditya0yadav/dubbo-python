@@ -106,6 +106,7 @@ class ProtobufTransportCodec:
     def _load_default_handlers(self):
         """Load default encoding and decoding handlers"""
         from dubbo.extension import extensionLoader
+
         try:
             # Try to load BetterProto handler
             name = "message"
@@ -118,6 +119,7 @@ class ProtobufTransportCodec:
 
         # Load primitive handler
         from dubbo.extension import extensionLoader
+
         name = "primitive"
         primitive_handler = extensionLoader.get_extension(ProtobufEncoder, name)()
         self._encoders.append(primitive_handler)
