@@ -17,7 +17,7 @@
 import abc
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, List, Tuple
+from typing import Any, Callable, Optional, List, Tuple, Type
 
 __all__ = [
     "ParameterDescriptor",
@@ -25,6 +25,7 @@ __all__ = [
     "TransportCodec",
     "SerializationEncoder",
     "SerializationDecoder",
+    "Codec",
 ]
 
 logger = logging.getLogger(__name__)
@@ -114,6 +115,43 @@ class SerializationDecoder(abc.ABC):
         :param data: The data to decode.
         :type data: bytes
         :return: The decoded object.
+        :rtype: Any
+        """
+        raise NotImplementedError()
+
+
+class Codec(abc.ABC):
+    """
+    Base codec interface for encoding and decoding data.
+    """
+
+    def __init__(self, model_type: Optional[Type[Any]] = None, **kwargs):
+        """
+        Initialize a codec
+        :param model_type: Optional model type for structured encoding/decoding
+        :type model_type: Optional[Type[Any]]
+        :param kwargs: Additional codec configuration
+        """
+        self.model_type = model_type
+
+    @abc.abstractmethod
+    def encode(self, data: Any) -> bytes:
+        """
+        Encode data into bytes
+        :param data: The data to encode
+        :type data: Any
+        :return: Encoded byte representation
+        :rtype: bytes
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def decode(self, data: bytes) -> Any:
+        """
+        Decode bytes into object
+        :param data: The bytes to decode
+        :type data: bytes
+        :return: Decoded object
         :rtype: Any
         """
         raise NotImplementedError()

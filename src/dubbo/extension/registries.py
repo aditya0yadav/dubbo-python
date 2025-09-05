@@ -22,7 +22,7 @@ from dubbo.compression import Compressor, Decompressor
 from dubbo.protocol import Protocol
 from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
-from dubbo.classes import Codec
+from dubbo.codec import Codec
 from dubbo.codec.json_codec import TypeHandler
 from dubbo.codec.protobuf_codec import ProtobufEncoder
 
@@ -51,8 +51,8 @@ registries = [
     "decompressorRegistry",
     "transporterRegistry",
     "codecRegistry",
-    "typeHandlerRegistry",
-    "betterprotoRegistry",
+    "jsonTypeHandlerRegistry",
+    "protoHandlerRegistry",
 ]
 
 # RegistryFactory registry
@@ -108,7 +108,7 @@ transporterRegistry = ExtendedRegistry(
     },
 )
 
-# Codec Registry
+# Codec registry
 codecRegistry = ExtendedRegistry(
     interface=Codec,
     impls={
@@ -117,17 +117,18 @@ codecRegistry = ExtendedRegistry(
     },
 )
 
-# BetterProtoHandler Registry
-betterprotoRegistry = ExtendedRegistry(
+# Protobuf handler registry
+protoHandlerRegistry = ExtendedRegistry(
     interface=ProtobufEncoder,
     impls={
-        "message": "dubbo.codec.protobuf_codec.BetterprotoMessageHandler",
+        "betterproto": "dubbo.codec.protobuf_codec.BetterprotoMessageHandler",
         "primitive": "dubbo.codec.protobuf_codec.PrimitiveHandler",
+        "googleproto": "dubbo.codec.protobuf_codec.GoogleProtobufMessageHandler",
     },
 )
 
-# TypeHandler registry
-typeHandlerRegistry = ExtendedRegistry(
+# JSON type handler registry
+jsonTypeHandlerRegistry = ExtendedRegistry(
     interface=TypeHandler,
     impls={
         "datetime": "dubbo.codec.json_codec.DateTimeHandler",

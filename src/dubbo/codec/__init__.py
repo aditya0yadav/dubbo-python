@@ -15,5 +15,6 @@
 # limitations under the License.
 
 from .dubbo_codec import DubboSerializationService
+from ._interface import Codec
 
-__all__ = ["DubboSerializationService"]
+__all__ = ["DubboSerializationService", "Codec"]

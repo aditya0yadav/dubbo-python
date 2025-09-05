@@ -246,22 +246,3 @@ class ReadWriteStream(ReadStream, WriteStream, abc.ABC):
     """
 
     pass
-
-
-class Codec(ABC):
-    def __init__(self, model_type: Optional[type[Any]] = None, **kwargs):
-        self.model_type = model_type
-
-    @abstractmethod
-    def encode(self, data: Any) -> bytes:
-        pass
-
-    @abstractmethod
-    def decode(self, data: bytes) -> Any:
-        pass
-
-
-class CodecHelper:
-    @staticmethod
-    def get_class():
-        return Codec

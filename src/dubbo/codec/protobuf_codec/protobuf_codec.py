@@ -16,7 +16,7 @@
 
 from typing import Any, Optional, List
 
-from .protobuf_base import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
+from ._interface import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
 
 __all__ = ["ProtobufTransportCodec"]
 

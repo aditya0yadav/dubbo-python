@@ -14,19 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
 import inspect
 import logging
-from dataclasses import dataclass
 from typing import Any, Callable, Optional, List, Tuple
-from ._interface import ParameterDescriptor, MethodDescriptor, SerializationDecoder, SerializationEncoder, TransportCodec
+from ._interface import (
+    ParameterDescriptor,
+    MethodDescriptor,
+    SerializationDecoder,
+    SerializationEncoder,
+    TransportCodec,
+    Codec,
+)
 
 __all__ = [
-    "ParameterDescriptor",
-    "MethodDescriptor",
-    "TransportCodec",
-    "SerializationEncoder",
-    "SerializationDecoder",
     "DubboSerializationService",
 ]
 
@@ -55,10 +55,9 @@ class DubboSerializationService:
         :raises Exception: If codec creation fails
         """
         try:
-            from dubbo.classes import CodecHelper
             from dubbo.extension.extension_loader import ExtensionLoader
 
-            codec_class = ExtensionLoader().get_extension(CodecHelper.get_class(), transport_type)
+            codec_class = ExtensionLoader().get_extension(Codec, transport_type)
             return codec_class(parameter_types=parameter_types or [], return_type=return_type, **codec_options)
         except ImportError as e:
             logger.error("Failed to import required modules: %s", e)
