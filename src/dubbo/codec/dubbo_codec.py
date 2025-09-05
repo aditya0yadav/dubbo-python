@@ -19,7 +19,7 @@ import inspect
 import logging
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, List, Tuple
-from _interface import ParameterDescriptor, MethodDescriptor, SerializationDecoder, SerializationEncoder, TransportCodec
+from ._interface import ParameterDescriptor, MethodDescriptor, SerializationDecoder, SerializationEncoder, TransportCodec
 
 __all__ = [
     "ParameterDescriptor",
