@@ -24,6 +24,7 @@ from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
 from dubbo.classes import Codec
 from dubbo.codec.json_codec import TypeHandler
+from dubbo.codec.protobuf_codec import ProtobufEncoder
 
 
 @dataclass
@@ -41,7 +42,7 @@ class ExtendedRegistry:
     impls: dict[str, Any]
 
 
-# All Extension Registries - FIXED: Added codecRegistry to the list
+# All Extension Registries
 registries = [
     "registryFactoryRegistry",
     "loadBalanceRegistry",
@@ -51,6 +52,7 @@ registries = [
     "transporterRegistry",
     "codecRegistry",
     "typeHandlerRegistry",
+    "betterprotoRegistry"
 ]
 
 # RegistryFactory registry
@@ -113,6 +115,15 @@ codecRegistry = ExtendedRegistry(
         "json": "dubbo.codec.json_codec.JsonTransportCodecBridge",
         "protobuf": "dubbo.codec.protobuf_codec.ProtobufTransportCodec",
     },
+)
+
+# BetterProtoHandler Registry
+betterprotoRegistry = ExtendedRegistry(
+    interface=ProtobufEncoder,
+    impls={
+        "message" : "dubbo.codec.protobuf_codec.BetterprotoMessageHandler",
+        "primitive" : "dubbo.codec.protobuf_codec.PrimitiveHandler",
+    }
 )
 
 # TypeHandler registry

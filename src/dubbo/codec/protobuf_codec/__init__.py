@@ -15,9 +15,15 @@
 # limitations under the License.
 
 from .protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
+from .protobuf_base import ProtobufEncoder, ProtobufDecoder
+from .betterproto_handler import BetterprotoMessageHandler, PrimitiveHandler
 
 __all__ = [
     "ProtobufTransportCodec",
     "ProtobufTransportDecoder",
     "ProtobufTransportEncoder",
+    "ProtobufEncoder",
+    "ProtobufDecoder"
+    "BetterprotoMessageHandler",
+    "PrimitiveHandler"
 ]

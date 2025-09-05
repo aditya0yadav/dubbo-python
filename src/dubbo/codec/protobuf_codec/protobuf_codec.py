@@ -17,7 +17,7 @@
 from typing import Any, Optional, List
 
 from .protobuf_base import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
-from .betterproto_handler import BetterprotoMessageHandler, PrimitiveHandler
+from .protobuf_base import ProtobufEncoder
 
 __all__ = ["ProtobufTransportCodec"]
 
@@ -105,16 +105,21 @@ class ProtobufTransportCodec:
 
     def _load_default_handlers(self):
         """Load default encoding and decoding handlers"""
+        from dubbo.extension import extensionLoader
         try:
             # Try to load BetterProto handler
-            betterproto_handler = BetterprotoMessageHandler()
+            name = "message"
+            message_handler = extensionLoader.get_extension(ProtobufEncoder, name)
+            betterproto_handler = message_handler()
             self._encoders.append(betterproto_handler)
             self._decoders.append(betterproto_handler)
         except ImportError:
             print("Warning: BetterProto handler not available")
 
         # Load primitive handler
-        primitive_handler = PrimitiveHandler()
+        from dubbo.extension import extensionLoader
+        name = "primitive"
+        primitive_handler = extensionLoader.get_extension(ProtobufEncoder, name)()
         self._encoders.append(primitive_handler)
         self._decoders.append(primitive_handler)
 
