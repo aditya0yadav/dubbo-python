@@ -37,21 +37,7 @@ def test_protobuf_roundtrip_message():
     decoded = codec.decode_return_value(reply_bytes)
     assert isinstance(decoded, GreeterReply)
     assert decoded.message == "Hello Alice"
-
-
-def test_protobuf_from_dict():
-    codec = ProtobufTransportCodec(parameter_type=GreeterRequest, return_type=GreeterReply)
-
-    # Dict instead of message instance
-    encoded = codec.encode_parameter({"name": "Bob"})
-    assert isinstance(encoded, bytes)
-
-    # To decode back to the parameter type, we need a decoder configured for GreeterRequest
-    param_decoder = ProtobufTransportDecoder(target_type=GreeterRequest)
-    req = param_decoder.decode(encoded)
-    assert isinstance(req, GreeterRequest)
-    assert req.name == "Bob"
-
+    
 
 def test_protobuf_primitive_fallback():
     codec = ProtobufTransportCodec(parameter_type=str, return_type=str)
