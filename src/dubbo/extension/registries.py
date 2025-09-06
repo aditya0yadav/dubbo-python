@@ -112,7 +112,7 @@ transporterRegistry = ExtendedRegistry(
 codecRegistry = ExtendedRegistry(
     interface=Codec,
     impls={
-        "json": "dubbo.codec.json_codec.JsonTransportCodecBridge",
+        "json": "dubbo.codec.json_codec.JsonTransportCodec",
         "protobuf": "dubbo.codec.protobuf_codec.ProtobufTransportCodec",
     },
 )
