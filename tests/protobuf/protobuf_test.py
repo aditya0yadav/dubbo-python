@@ -13,39 +13,69 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
-from generated.protobuf_test import GreeterReply, GreeterRequest
+import pytest
 
-from dubbo.codec.protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder
+from dubbo.codec.protobuf_codec import ProtobufTransportCodec
+from dubbo.codec.protobuf_codec import PrimitiveHandler
+from dubbo.codec.protobuf_codec import GoogleProtobufMessageHandler
+from dubbo.codec.protobuf_codec.protobuf_codec import SerializationException, DeserializationException
 
 
-def test_protobuf_roundtrip_message():
-    codec = ProtobufTransportCodec(parameter_type=GreeterRequest, return_type=GreeterReply)
-
-    # Create a request
-    req = GreeterRequest(name="Alice")
+def test_primitive_roundtrip_string():
+    codec = ProtobufTransportCodec(parameter_types=[str], return_type=str)
 
     # Encode
-    encoded = codec.encode_parameter(req)
+    encoded = codec.encode_parameter("hello world")
     assert isinstance(encoded, bytes)
 
-    # Fake a server reply
-    reply = GreeterReply(message="Hello Alice")
-    reply_bytes = bytes(reply)
+    # Decode
+    decoded = codec.decode_return_value(encoded)
+    assert decoded == "hello world"
 
-    # Decode return value
+
+def test_primitive_roundtrip_int():
+    codec = ProtobufTransportCodec(parameter_types=[int], return_type=int)
+
+    encoded = codec.encode_parameter(12345)
+    decoded = codec.decode_return_value(encoded)
+
+    assert isinstance(decoded, int)
+    assert decoded == 12345
+
+
+def test_primitive_invalid_type_raises():
+    codec = ProtobufTransportCodec(parameter_types=[dict], return_type=dict)
+
+    with pytest.raises(SerializationException):
+        codec.encode_parameter({"a": 1})
+
+
+def test_decode_with_no_return_type_raises():
+    codec = ProtobufTransportCodec(parameter_types=[str], return_type=None)
+
+    data = PrimitiveHandler().encode("hello", str)
+
+    with pytest.raises(DeserializationException):
+        codec.decode_return_value(data)
+
+
+@pytest.mark.skipif(not GoogleProtobufMessageHandler.__module__, reason="google.protobuf not available")
+def test_google_protobuf_roundtrip():
+    from generated.greet_pb2 import GreeterRequest, GreeterReply
+
+    codec = ProtobufTransportCodec(parameter_types=[GreeterRequest], return_type=GreeterReply)
+
+    req = GreeterRequest(name="Alice")
+    encoded = codec.encode_parameter(req)
+
+    assert isinstance(encoded, bytes)
+
+    # Fake server response
+    reply = GreeterReply(message="Hello Alice")
+    reply_bytes = reply.SerializeToString()
+
     decoded = codec.decode_return_value(reply_bytes)
     assert isinstance(decoded, GreeterReply)
     assert decoded.message == "Hello Alice"
-    
-
-def test_protobuf_primitive_fallback():
-    codec = ProtobufTransportCodec(parameter_type=str, return_type=str)
-
-    encoded = codec.encode_parameter("simple string")
-    assert isinstance(encoded, bytes)
-
-    # Decode back
-    decoded = codec.decode_return_value(encoded)
-    assert isinstance(decoded, str)
-    assert decoded == "simple string"
