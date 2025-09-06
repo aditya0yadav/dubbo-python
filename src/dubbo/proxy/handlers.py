@@ -127,7 +127,7 @@ class RpcMethodHandler:
         """
         if request_deserializer is None or response_serializer is None:
             codec_kwargs = {
-                "transport_type": codec or "json",
+                "transport_type": codec,
                 "parameter_types": params_types,
                 "return_type": return_type,
                 **kwargs,
