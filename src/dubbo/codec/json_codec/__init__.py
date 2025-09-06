@@ -40,5 +40,5 @@ __all__ = [
     "SimpleTypesHandler",
     "EnumHandler",
     "DataclassHandler",
-    "JsonTransportCodec"
+    "JsonTransportCodec",
 ]

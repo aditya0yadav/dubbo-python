@@ -28,7 +28,7 @@ __all__ = ["JsonTransportCodec", "SerializationException", "DeserializationExcep
 
 class SerializationException(Exception):
     """Exception raised during serialization"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
@@ -36,15 +36,16 @@ class SerializationException(Exception):
 
 class DeserializationException(Exception):
     """Exception raised during deserialization"""
-    
+
     def __init__(self, message: str):
         super().__init__(message)
         self.message = message
 
+
 class JsonTransportCodec:
     """
     JSON Transport Codec with integrated encoder/decoder functionality.
-    
+
     This class serves as both a transport codec and provides encoder/decoder
     interface compatibility for services that expect separate encoder/decoder objects.
     """
@@ -59,7 +60,7 @@ class JsonTransportCodec:
     ):
         """
         Initialize the JSON transport codec.
-        
+
         :param parameter_types: List of parameter types for the method.
         :param return_type: Return type for the method.
         :param maximum_depth: Maximum serialization depth.
@@ -173,7 +174,7 @@ class JsonTransportCodec:
     def encoder(self):
         """
         Get the parameter encoder instance (returns self for compatibility).
-        
+
         :return: Self as encoder.
         :rtype: JsonTransportCodec
         """
@@ -182,7 +183,7 @@ class JsonTransportCodec:
     def decoder(self):
         """
         Get the return value decoder instance (returns self for compatibility).
-        
+
         :return: Self as decoder.
         :rtype: JsonTransportCodec
         """
@@ -191,7 +192,7 @@ class JsonTransportCodec:
     def encode(self, arguments: tuple) -> bytes:
         """
         Encode method for encoder interface compatibility.
-        
+
         :param arguments: The method arguments to encode.
         :type arguments: tuple
         :return: Encoded parameter bytes.
@@ -202,7 +203,7 @@ class JsonTransportCodec:
     def decode(self, data: bytes) -> Any:
         """
         Decode method for decoder interface compatibility.
-        
+
         :param data: The bytes to decode.
         :type data: bytes
         :return: Decoded return value.
@@ -311,15 +312,19 @@ class JsonTransportCodec:
         # Handle special serialized objects
         if "__datetime__" in data:
             from datetime import datetime
+
             return datetime.fromisoformat(data["__datetime__"])
         elif "__date__" in data:
             from datetime import date
+
             return date.fromisoformat(data["__date__"])
         elif "__time__" in data:
             from datetime import time
+
             return time.fromisoformat(data["__time__"])
         elif "__decimal__" in data:
             from decimal import Decimal
+
             return Decimal(data["__decimal__"])
         elif "__set__" in data:
             return set(self._reconstruct_objects(item) for item in data["__set__"])
@@ -327,9 +332,11 @@ class JsonTransportCodec:
             return frozenset(self._reconstruct_objects(item) for item in data["__frozenset__"])
         elif "__uuid__" in data:
             from uuid import UUID
+
             return UUID(data["__uuid__"])
         elif "__path__" in data:
             from pathlib import Path
+
             return Path(data["__path__"])
         elif "__pydantic_model__" in data and "__model_data__" in data:
             return self._reconstruct_pydantic_model(data)
@@ -349,6 +356,7 @@ class JsonTransportCodec:
             module_name, class_name = model_path.rsplit(".", 1)
 
             import importlib
+
             module = importlib.import_module(module_name)
             model_class = getattr(module, class_name)
 
@@ -362,6 +370,7 @@ class JsonTransportCodec:
         module_name, class_name = data["__dataclass__"].rsplit(".", 1)
 
         import importlib
+
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
@@ -373,8 +382,8 @@ class JsonTransportCodec:
         module_name, class_name = data["__enum__"].rsplit(".", 1)
 
         import importlib
+
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
         return cls(data["value"])
-

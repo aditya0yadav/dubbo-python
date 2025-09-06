@@ -136,7 +136,7 @@ jsonTypeHandlerRegistry = ExtendedRegistry(
         "collection": "dubbo.codec.json_codec.CollectionHandler",
         "enum": "dubbo.codec.json_codec.EnumHandler",
         "dataclass": "dubbo.codec.json_codec.DataclassHandler",
-        "simple": "dubbo.codec.json_codec.SimpleTypeHandler",
+        "simple": "dubbo.codec.json_codec.SimpleTypesHandler",
         "pydantic": "dubbo.codec.json_codec.PydanticHandler",
     },
 )
