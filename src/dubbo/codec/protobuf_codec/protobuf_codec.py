@@ -3,8 +3,6 @@
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Optional, List
+from typing import Any, Optional
 
-from ._interface import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
+from ._interface import DeserializationException, ProtobufDecoder, ProtobufEncoder, SerializationException
 
 __all__ = ["ProtobufTransportCodec"]
 
@@ -24,7 +22,7 @@ __all__ = ["ProtobufTransportCodec"]
 class ProtobufTransportEncoder:
     """Protobuf encoder for parameters"""
 
-    def __init__(self, handlers: List[ProtobufEncoder], parameter_types: Optional[List[type]] = None):
+    def __init__(self, handlers: list[ProtobufEncoder], parameter_types: Optional[list[type]] = None):
         self._handlers = handlers
         self._parameter_types = parameter_types or []
 
@@ -59,7 +57,7 @@ class ProtobufTransportEncoder:
 class ProtobufTransportDecoder:
     """Protobuf decoder for return values"""
 
-    def __init__(self, handlers: List[ProtobufDecoder], return_type: Optional[type] = None):
+    def __init__(self, handlers: list[ProtobufDecoder], return_type: Optional[type] = None):
         self._handlers = handlers
         self._return_type = return_type
 
@@ -87,7 +85,7 @@ class ProtobufTransportCodec:
 
     def __init__(
         self,
-        parameter_types: Optional[List[type]] = None,
+        parameter_types: Optional[list[type]] = None,
         return_type: Optional[type] = None,
         **kwargs,
     ):
@@ -95,8 +93,8 @@ class ProtobufTransportCodec:
         self._return_type = return_type
 
         # Initialize handlers
-        self._encoders: List[ProtobufEncoder] = []
-        self._decoders: List[ProtobufDecoder] = []
+        self._encoders: list[ProtobufEncoder] = []
+        self._decoders: list[ProtobufDecoder] = []
 
         # Load default handlers
         self._load_default_handlers()
@@ -162,10 +160,10 @@ class ProtobufTransportCodec:
         """Register a custom decoder"""
         self._decoders.append(decoder)
 
-    def get_encoders(self) -> List[ProtobufEncoder]:
+    def get_encoders(self) -> list[ProtobufEncoder]:
         """Get all registered encoders"""
         return self._encoders.copy()
 
-    def get_decoders(self) -> List[ProtobufDecoder]:
+    def get_decoders(self) -> list[ProtobufDecoder]:
         """Get all registered decoders"""
         return self._decoders.copy()

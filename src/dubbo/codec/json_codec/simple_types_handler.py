@@ -15,7 +15,7 @@
 # limitations under the License.
 
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Union
 from uuid import UUID
 
 from dubbo.codec.json_codec import TypeHandler
@@ -43,7 +43,7 @@ class SimpleTypesHandler(TypeHandler):
         """
         return obj_type in (UUID, Path) or isinstance(obj, Path)
 
-    def serialize_to_dict(self, obj: Union[UUID, Path]) -> Dict[str, str]:
+    def serialize_to_dict(self, obj: Union[UUID, Path]) -> dict[str, str]:
         """
         Serialize UUID or Path to dictionary representation.
 

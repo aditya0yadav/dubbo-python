@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime, date, time
-from typing import Any, Dict, Union
+from datetime import date, datetime, time
+from typing import Any, Union
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -42,14 +42,14 @@ class DateTimeHandler(TypeHandler):
         """
         return isinstance(obj, (datetime, date, time))
 
-    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Union[datetime, date, time]) -> dict[str, Any]:
         """
         Serialize datetime objects to dictionary representation.
 
         :param obj: The datetime object to serialize.
         :type obj: Union[datetime, date, time]
-        :return: Dictionary representation with type markers.
-        :rtype: Dict[str, Any]
+        :return: dictionary representation with type markers.
+        :rtype: dict[str, Any]
         """
         if isinstance(obj, datetime):
             return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}

@@ -14,14 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Type, List, Optional
-from dubbo.codec.json_codec import (
-    JsonCodec,
-    TypeHandler,
-    StandardJsonCodec,
-    OrJsonCodec,
-    UJsonCodec,
-)
+from typing import Any, Optional
+
+from .orjson_codec import OrJsonCodec
+from .ujson_codec import UJsonCodec
+from .standard_json import StandardJsonCodec
+from ._interfaces import JsonCodec, TypeHandler
 
 __all__ = ["JsonTransportCodec", "SerializationException", "DeserializationException"]
 
@@ -52,8 +50,8 @@ class JsonTransportCodec:
 
     def __init__(
         self,
-        parameter_types: Optional[List[Type]] = None,
-        return_type: Optional[Type] = None,
+        parameter_types: Optional[list[type]] = None,
+        return_type: Optional[type] = None,
         maximum_depth: int = 100,
         strict_validation: bool = True,
         **kwargs,
@@ -61,7 +59,7 @@ class JsonTransportCodec:
         """
         Initialize the JSON transport codec.
 
-        :param parameter_types: List of parameter types for the method.
+        :param parameter_types: list of parameter types for the method.
         :param return_type: Return type for the method.
         :param maximum_depth: Maximum serialization depth.
         :param strict_validation: Whether to use strict validation.
@@ -75,7 +73,7 @@ class JsonTransportCodec:
         self._json_codecs = self._setup_json_codecs()
         self._type_handlers = self._setup_type_handlers()
 
-    def _setup_json_codecs(self) -> List[JsonCodec]:
+    def _setup_json_codecs(self) -> list[JsonCodec]:
         """
         Setup JSON codecs in priority order.
         """
@@ -96,7 +94,7 @@ class JsonTransportCodec:
 
         return codecs
 
-    def _setup_type_handlers(self) -> List[TypeHandler]:
+    def _setup_type_handlers(self) -> list[TypeHandler]:
         """
         Setup type handlers for different object types.
         """

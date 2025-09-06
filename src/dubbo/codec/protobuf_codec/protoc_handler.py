@@ -15,7 +15,8 @@
 # limitations under the License.
 
 from typing import Any, Optional
-from ._interface import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
+
+from ._interface import DeserializationException, ProtobufDecoder, ProtobufEncoder, SerializationException
 
 try:
     from google.protobuf.message import Message as GoogleMessage

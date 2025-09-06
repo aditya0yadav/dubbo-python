@@ -15,7 +15,7 @@
 # limitations under the License.
 
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -43,13 +43,13 @@ class DecimalHandler(TypeHandler):
         """
         return obj_type is Decimal
 
-    def serialize_to_dict(self, obj: Decimal) -> Dict[str, str]:
+    def serialize_to_dict(self, obj: Decimal) -> dict[str, str]:
         """
         Serialize Decimal to dictionary representation.
 
         :param obj: The Decimal to serialize.
         :type obj: Decimal
-        :return: Dictionary representation with string value.
-        :rtype: Dict[str, str]
+        :return: dictionary representation with string value.
+        :rtype: dict[str, str]
         """
         return {"__decimal__": str(obj)}

@@ -17,8 +17,7 @@
 import json
 from typing import Any, Optional
 
-from ._interface import ProtobufEncoder, ProtobufDecoder, SerializationException, DeserializationException
-
+from ._interface import DeserializationException, ProtobufDecoder, ProtobufEncoder, SerializationException
 
 __all__ = ["PrimitiveHandler"]
 

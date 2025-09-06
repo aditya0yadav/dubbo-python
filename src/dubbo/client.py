@@ -3,8 +3,6 @@
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -15,10 +13,11 @@
 # limitations under the License.
 
 import threading
-from typing import Optional, List, Type
+from typing import Optional
 
 from dubbo.bootstrap import Dubbo
 from dubbo.classes import MethodDescriptor
+from dubbo.codec import DubboSerializationService
 from dubbo.configs import ReferenceConfig
 from dubbo.constants import common_constants
 from dubbo.extension import extensionLoader
@@ -32,7 +31,6 @@ from dubbo.types import (
     SerializingFunction,
 )
 from dubbo.url import URL
-from dubbo.codec import DubboSerializationService
 
 __all__ = ["Client"]
 
@@ -87,8 +85,8 @@ class Client:
         self,
         rpc_type: str,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
@@ -130,8 +128,8 @@ class Client:
     def unary(
         self,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
@@ -152,8 +150,8 @@ class Client:
     def client_stream(
         self,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
@@ -174,8 +172,8 @@ class Client:
     def server_stream(
         self,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
@@ -196,8 +194,8 @@ class Client:
     def bi_stream(
         self,
         method_name: str,
-        params_types: List[Type],
-        return_type: Type,
+        params_types: list[type],
+        return_type: type,
         codec: Optional[str] = None,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,

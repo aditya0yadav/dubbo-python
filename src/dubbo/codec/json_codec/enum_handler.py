@@ -15,7 +15,7 @@
 # limitations under the License.
 
 from enum import Enum
-from typing import Any, Dict
+from typing import Any
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -43,13 +43,13 @@ class EnumHandler(TypeHandler):
         """
         return isinstance(obj, Enum)
 
-    def serialize_to_dict(self, obj: Enum) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Enum) -> dict[str, Any]:
         """
         Serialize Enum to dictionary representation.
 
         :param obj: The Enum to serialize.
         :type obj: Enum
         :return: Dictionary with enum class path and value.
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, Any]
         """
         return {"__enum__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "value": obj.value}

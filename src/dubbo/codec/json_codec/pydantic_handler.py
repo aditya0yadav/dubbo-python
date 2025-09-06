@@ -3,8 +3,6 @@
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, Optional, List, Type
+from typing import Any, Optional
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -52,14 +50,14 @@ class PydanticHandler(TypeHandler):
         """
         return self.available and isinstance(obj, self.BaseModel)
 
-    def serialize_to_dict(self, obj: Any) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Any) -> dict[str, Any]:
         """
         Serialize Pydantic model to dictionary representation.
 
         :param obj: The Pydantic model to serialize.
         :type obj: BaseModel
         :return: Dictionary representation with model metadata.
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, Any]
         """
         if not self.available:
             raise ImportError("Pydantic not available")
@@ -75,12 +73,12 @@ class PydanticHandler(TypeHandler):
             "__model_data__": model_data,
         }
 
-    def create_parameter_model(self, parameter_types: Optional[List[Type]] = None):
+    def create_parameter_model(self, parameter_types: Optional[list[type]] = None):
         """
         Create a Pydantic model for parameter wrapping.
 
         :param parameter_types: List of parameter types to wrap.
-        :type parameter_types: Optional[List[Type]]
+        :type parameter_types: Optional[list[type]]
         :return: Dynamically created Pydantic model or None.
         """
         if not self.available or parameter_types is None:

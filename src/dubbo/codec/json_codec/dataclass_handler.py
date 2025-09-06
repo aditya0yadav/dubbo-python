@@ -15,7 +15,7 @@
 # limitations under the License.
 
 from dataclasses import asdict, is_dataclass
-from typing import Any, Dict
+from typing import Any
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -43,13 +43,13 @@ class DataclassHandler(TypeHandler):
         """
         return is_dataclass(obj)
 
-    def serialize_to_dict(self, obj: Any) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Any) -> dict[str, Any]:
         """
         Serialize dataclass to dictionary representation.
 
         :param obj: The dataclass to serialize.
         :type obj: Any
-        :return: Dictionary with class path and field data.
-        :rtype: Dict[str, Any]
+        :return: dictionary with class path and field data.
+        :rtype: dict[str, Any]
         """
         return {"__dataclass__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "fields": asdict(obj)}

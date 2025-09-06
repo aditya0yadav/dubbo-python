@@ -18,13 +18,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from dubbo.cluster import LoadBalance
+from dubbo.codec import Codec
+from dubbo.codec.json_codec import TypeHandler
+from dubbo.codec.protobuf_codec import ProtobufEncoder
 from dubbo.compression import Compressor, Decompressor
 from dubbo.protocol import Protocol
 from dubbo.registry import RegistryFactory
 from dubbo.remoting import Transporter
-from dubbo.codec import Codec
-from dubbo.codec.json_codec import TypeHandler
-from dubbo.codec.protobuf_codec import ProtobufEncoder
 
 
 @dataclass

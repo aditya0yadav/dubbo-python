@@ -17,7 +17,7 @@
 import abc
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, List, Tuple, Type
+from typing import Any, Callable, Optional
 
 __all__ = [
     "ParameterDescriptor",
@@ -47,7 +47,7 @@ class MethodDescriptor:
 
     function: Callable
     name: str
-    parameters: List[ParameterDescriptor]
+    parameters: list[ParameterDescriptor]
     return_parameter: ParameterDescriptor
     documentation: Optional[str] = None
 
@@ -92,11 +92,11 @@ class SerializationEncoder(abc.ABC):
     """
 
     @abc.abstractmethod
-    def encode(self, arguments: Tuple[Any, ...]) -> bytes:
+    def encode(self, arguments: tuple[Any, ...]) -> bytes:
         """
         Encode arguments to bytes.
         :param arguments: The arguments to encode.
-        :type arguments: Tuple[Any, ...]
+        :type arguments: tuple[Any, ...]
         :return: The encoded bytes.
         :rtype: bytes
         """
@@ -125,11 +125,11 @@ class Codec(abc.ABC):
     Base codec interface for encoding and decoding data.
     """
 
-    def __init__(self, model_type: Optional[Type[Any]] = None, **kwargs):
+    def __init__(self, model_type: Optional[type[Any]] = None, **kwargs):
         """
         Initialize a codec
         :param model_type: Optional model type for structured encoding/decoding
-        :type model_type: Optional[Type[Any]]
+        :type model_type: Optional[type[Any]]
         :param kwargs: Additional codec configuration
         """
         self.model_type = model_type
@@ -138,7 +138,7 @@ class Codec(abc.ABC):
     def encode(self, data: Any) -> bytes:
         """
         Encode data into bytes
-        :param data: The data to encode
+        :param data: The data to encode.
         :type data: Any
         :return: Encoded byte representation
         :rtype: bytes
@@ -149,7 +149,7 @@ class Codec(abc.ABC):
     def decode(self, data: bytes) -> Any:
         """
         Decode bytes into object
-        :param data: The bytes to decode
+        :param data: The bytes to decode.
         :type data: bytes
         :return: Decoded object
         :rtype: Any

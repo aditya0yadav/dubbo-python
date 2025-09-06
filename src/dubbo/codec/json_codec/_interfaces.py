@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import abc
-from typing import Any, Dict
+from typing import Any
 
 __all__ = ["JsonCodec", "TypeHandler"]
 
@@ -86,13 +86,13 @@ class TypeHandler(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def serialize_to_dict(self, obj: Any) -> Dict[str, Any]:
+    def serialize_to_dict(self, obj: Any) -> dict[str, Any]:
         """
         Serialize the object into a dictionary representation.
 
         :param obj: The object to serialize.
         :type obj: Any
         :return: The dictionary representation of the object.
-        :rtype: Dict[str, Any]
+        :rtype: dict[str, Any]
         """
         raise NotImplementedError()

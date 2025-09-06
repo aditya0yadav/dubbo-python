@@ -16,7 +16,6 @@
 
 import abc
 import threading
-from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional, Union
 
 from dubbo.types import DeserializingFunction, RpcType, RpcTypes, SerializingFunction

@@ -8,13 +8,13 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from datetime import date, datetime, time
 from decimal import Decimal
 from enum import Enum
@@ -22,7 +22,6 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
-from pydantic import BaseModel
 
 from dubbo.codec.json_codec import JsonTransportCodec
 
@@ -37,11 +36,6 @@ class SampleDataClass:
 class Color(Enum):
     RED = "red"
     GREEN = "green"
-
-
-class SamplePydanticModel(BaseModel):
-    name: str
-    value: int
 
 
 # List of test cases: (input_value, expected_type_after_decoding)
@@ -59,7 +53,7 @@ test_cases = [
     (UUID("12345678-1234-5678-1234-567812345678"), UUID),
     (Path("/tmp/file.txt"), Path),
     (Color.RED, Color),
-    (SamplePydanticModel(name="test", value=42), SamplePydanticModel),
+    (SampleDataClass(field1=1, field2="abc"), SampleDataClass),
 ]
 
 
@@ -74,13 +68,8 @@ def test_json_codec_roundtrip(value, expected_type):
     # Decode
     decoded = codec.decode_return_value(encoded)
 
-    # For pydantic models, compare dict representation
-    if hasattr(value, "dict") and callable(value.dict):
-        assert decoded.dict() == value.dict()
     # For dataclass, compare asdict
-    elif hasattr(value, "__dataclass_fields__"):
-        from dataclasses import asdict
-
+    if hasattr(value, "__dataclass_fields__"):
         assert asdict(decoded) == asdict(value)
     # For sets/frozensets, compare as sets
     elif isinstance(value, (set, frozenset)):

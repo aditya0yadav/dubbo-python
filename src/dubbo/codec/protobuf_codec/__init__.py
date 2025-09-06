@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
-from ._interface import ProtobufEncoder, ProtobufDecoder
+from ._interface import ProtobufDecoder, ProtobufEncoder
 from .betterproto_handler import BetterprotoMessageHandler
-from .protoc_handler import GoogleProtobufMessageHandler
 from .primitive_handler import PrimitiveHandler
+from .protobuf_codec import ProtobufTransportCodec, ProtobufTransportDecoder, ProtobufTransportEncoder
+from .protoc_handler import GoogleProtobufMessageHandler
 
 __all__ = [
     "ProtobufTransportCodec",

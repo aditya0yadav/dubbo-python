@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 from dubbo.codec.json_codec import TypeHandler
 
@@ -42,14 +42,14 @@ class CollectionHandler(TypeHandler):
         """
         return obj_type in (set, frozenset)
 
-    def serialize_to_dict(self, obj: Union[set, frozenset]) -> Dict[str, list]:
+    def serialize_to_dict(self, obj: Union[set, frozenset]) -> dict[str, list]:
         """
         Serialize set/frozenset to dictionary representation.
 
         :param obj: The collection to serialize.
         :type obj: Union[set, frozenset]
-        :return: Dictionary representation with type marker.
-        :rtype: Dict[str, list]
+        :return: dictionary representation with type marker.
+        :rtype: dict[str, list]
         """
         if isinstance(obj, frozenset):
             return {"__frozenset__": list(obj)}

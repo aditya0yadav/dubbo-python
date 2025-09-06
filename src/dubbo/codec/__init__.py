@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .dubbo_codec import DubboSerializationService
 from ._interface import Codec
+from .dubbo_codec import DubboSerializationService
 
 __all__ = ["DubboSerializationService", "Codec"]

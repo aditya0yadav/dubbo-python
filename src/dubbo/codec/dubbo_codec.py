@@ -16,14 +16,15 @@
 
 import inspect
 import logging
-from typing import Any, Callable, Optional, List, Tuple
+from typing import Any, Callable, Optional
+
 from ._interface import (
-    ParameterDescriptor,
+    Codec,
     MethodDescriptor,
+    ParameterDescriptor,
     SerializationDecoder,
     SerializationEncoder,
     TransportCodec,
-    Codec,
 )
 
 __all__ = [
@@ -39,7 +40,7 @@ class DubboSerializationService:
     @staticmethod
     def create_transport_codec(
         transport_type: str = "json",
-        parameter_types: Optional[List[type]] = None,
+        parameter_types: Optional[list[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
     ) -> TransportCodec:
@@ -47,7 +48,7 @@ class DubboSerializationService:
         Create transport codec
 
         :param transport_type: The transport type (e.g., 'json', 'protobuf')
-        :param parameter_types: List of parameter types
+        :param parameter_types: list of parameter types
         :param return_type: Return value type
         :param codec_options: Additional codec options
         :return: Transport codec instance
@@ -69,18 +70,18 @@ class DubboSerializationService:
     @staticmethod
     def create_encoder_decoder_pair(
         transport_type: str,
-        parameter_types: Optional[List[type]] = None,
+        parameter_types: Optional[list[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
-    ) -> Tuple[SerializationEncoder, SerializationDecoder]:
+    ) -> tuple[SerializationEncoder, SerializationDecoder]:
         """
         Create encoder and decoder instances
 
         :param transport_type: The transport type
-        :param parameter_types: List of parameter types
+        :param parameter_types: list of parameter types
         :param return_type: Return value type
         :param codec_options: Additional codec options
-        :return: Tuple of (encoder, decoder)
+        :return: tuple of (encoder, decoder)
         :raises ValueError: If codec returns None encoder/decoder
         :raises Exception: If creation fails
         """
@@ -107,18 +108,18 @@ class DubboSerializationService:
     @staticmethod
     def create_serialization_functions(
         transport_type: str,
-        parameter_types: Optional[List[type]] = None,
+        parameter_types: Optional[list[type]] = None,
         return_type: Optional[type] = None,
         **codec_options,
-    ) -> Tuple[Callable[..., bytes], Callable[[bytes], Any]]:
+    ) -> tuple[Callable[..., bytes], Callable[[bytes], Any]]:
         """
         Create serializer and deserializer functions
 
         :param transport_type: The transport type
-        :param parameter_types: List of parameter types
+        :param parameter_types: list of parameter types
         :param return_type: Return value type
         :param codec_options: Additional codec options
-        :return: Tuple of (serializer_function, deserializer_function)
+        :return: tuple of (serializer_function, deserializer_function)
         :raises Exception: If creation fails
         """
         try:
@@ -157,7 +158,7 @@ class DubboSerializationService:
     def create_method_descriptor(
         func: Callable,
         method_name: Optional[str] = None,
-        parameter_types: Optional[List[type]] = None,
+        parameter_types: Optional[list[type]] = None,
         return_type: Optional[type] = None,
         interface: Optional[Callable[..., Any]] = None,
     ) -> MethodDescriptor:
