@@ -26,7 +26,6 @@ from .simple_types_handler import SimpleTypesHandler
 from .enum_handler import EnumHandler
 from .dataclass_handler import DataclassHandler
 from .json_codec_handler import JsonTransportCodec
-from .json_codec import JsonTransportCodecBridge
 
 __all__ = [
     "JsonCodec",
@@ -41,6 +40,5 @@ __all__ = [
     "SimpleTypesHandler",
     "EnumHandler",
     "DataclassHandler",
-    "JsonTransportCodec",
-    "JsonTransportCodecBridge",
+    "JsonTransportCodec"
 ]

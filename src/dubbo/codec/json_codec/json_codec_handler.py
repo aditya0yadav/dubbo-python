@@ -21,13 +21,6 @@ from dubbo.codec.json_codec import (
     StandardJsonCodec,
     OrJsonCodec,
     UJsonCodec,
-    DateTimeHandler,
-    PydanticHandler,
-    CollectionHandler,
-    DecimalHandler,
-    SimpleTypesHandler,
-    EnumHandler,
-    DataclassHandler,
 )
 
 __all__ = ["JsonTransportCodec", "SerializationException", "DeserializationException"]
@@ -35,19 +28,25 @@ __all__ = ["JsonTransportCodec", "SerializationException", "DeserializationExcep
 
 class SerializationException(Exception):
     """Exception raised during serialization"""
-
-    pass
+    
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
 
 
 class DeserializationException(Exception):
     """Exception raised during deserialization"""
-
-    pass
-
+    
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
 
 class JsonTransportCodec:
     """
-    JSON Transport Codec
+    JSON Transport Codec with integrated encoder/decoder functionality.
+    
+    This class serves as both a transport codec and provides encoder/decoder
+    interface compatibility for services that expect separate encoder/decoder objects.
     """
 
     def __init__(
@@ -58,6 +57,14 @@ class JsonTransportCodec:
         strict_validation: bool = True,
         **kwargs,
     ):
+        """
+        Initialize the JSON transport codec.
+        
+        :param parameter_types: List of parameter types for the method.
+        :param return_type: Return type for the method.
+        :param maximum_depth: Maximum serialization depth.
+        :param strict_validation: Whether to use strict validation.
+        """
         self.parameter_types = parameter_types or []
         self.return_type = return_type
         self.maximum_depth = maximum_depth
@@ -70,7 +77,6 @@ class JsonTransportCodec:
     def _setup_json_codecs(self) -> List[JsonCodec]:
         """
         Setup JSON codecs in priority order.
-        Following the compression pattern: try fastest first, fallback to standard.
         """
         codecs = []
 
@@ -92,29 +98,24 @@ class JsonTransportCodec:
     def _setup_type_handlers(self) -> List[TypeHandler]:
         """
         Setup type handlers for different object types.
-        Similar to compression - each handler is independent and focused.
         """
         handlers = []
 
-        # Add all available handlers
-        handlers.append(DateTimeHandler())
+        from dubbo.extension import extensionLoader
 
-        pydantic_handler = PydanticHandler()
-        if pydantic_handler.available:
-            handlers.append(pydantic_handler)
+        handler_names = ["datetime", "pydantic", "decimal", "enum", "simple", "dataclass", "collection"]
 
-        handlers.extend(
-            [
-                DecimalHandler(),
-                CollectionHandler(),
-                SimpleTypesHandler(),
-                EnumHandler(),
-                DataclassHandler(),
-            ]
-        )
-
+        for name in handler_names:
+            try:
+                plugin_class = extensionLoader.get_extension(TypeHandler, name)
+                if plugin_class:
+                    plugin_instance = plugin_class()
+                    handlers.append(plugin_instance)
+            except Exception as e:
+                print(f"Warning: Could not load type handler plugin '{name}': {e}")
         return handlers
 
+    # Core encoding/decoding methods
     def encode_parameters(self, *arguments) -> bytes:
         """
         Encode parameters to JSON bytes.
@@ -168,6 +169,48 @@ class JsonTransportCodec:
         except Exception as e:
             raise DeserializationException(f"Return value decoding failed: {e}") from e
 
+    # Encoder/Decoder interface compatibility methods
+    def encoder(self):
+        """
+        Get the parameter encoder instance (returns self for compatibility).
+        
+        :return: Self as encoder.
+        :rtype: JsonTransportCodec
+        """
+        return self
+
+    def decoder(self):
+        """
+        Get the return value decoder instance (returns self for compatibility).
+        
+        :return: Self as decoder.
+        :rtype: JsonTransportCodec
+        """
+        return self
+
+    def encode(self, arguments: tuple) -> bytes:
+        """
+        Encode method for encoder interface compatibility.
+        
+        :param arguments: The method arguments to encode.
+        :type arguments: tuple
+        :return: Encoded parameter bytes.
+        :rtype: bytes
+        """
+        return self.encode_parameters(*arguments)
+
+    def decode(self, data: bytes) -> Any:
+        """
+        Decode method for decoder interface compatibility.
+        
+        :param data: The bytes to decode.
+        :type data: bytes
+        :return: Decoded return value.
+        :rtype: Any
+        """
+        return self.decode_return_value(data)
+
+    # Internal serialization methods
     def _serialize_object(self, obj: Any, depth: int = 0) -> Any:
         """
         Serialize an object using the appropriate type handler.
@@ -268,19 +311,15 @@ class JsonTransportCodec:
         # Handle special serialized objects
         if "__datetime__" in data:
             from datetime import datetime
-
             return datetime.fromisoformat(data["__datetime__"])
         elif "__date__" in data:
             from datetime import date
-
             return date.fromisoformat(data["__date__"])
         elif "__time__" in data:
             from datetime import time
-
             return time.fromisoformat(data["__time__"])
         elif "__decimal__" in data:
             from decimal import Decimal
-
             return Decimal(data["__decimal__"])
         elif "__set__" in data:
             return set(self._reconstruct_objects(item) for item in data["__set__"])
@@ -288,11 +327,9 @@ class JsonTransportCodec:
             return frozenset(self._reconstruct_objects(item) for item in data["__frozenset__"])
         elif "__uuid__" in data:
             from uuid import UUID
-
             return UUID(data["__uuid__"])
         elif "__path__" in data:
             from pathlib import Path
-
             return Path(data["__path__"])
         elif "__pydantic_model__" in data and "__model_data__" in data:
             return self._reconstruct_pydantic_model(data)
@@ -312,7 +349,6 @@ class JsonTransportCodec:
             module_name, class_name = model_path.rsplit(".", 1)
 
             import importlib
-
             module = importlib.import_module(module_name)
             model_class = getattr(module, class_name)
 
@@ -326,7 +362,6 @@ class JsonTransportCodec:
         module_name, class_name = data["__dataclass__"].rsplit(".", 1)
 
         import importlib
-
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
@@ -338,8 +373,8 @@ class JsonTransportCodec:
         module_name, class_name = data["__enum__"].rsplit(".", 1)
 
         import importlib
-
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
         return cls(data["value"])
+
