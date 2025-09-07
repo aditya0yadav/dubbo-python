@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Optional
+from typing import Any, Optional, get_args, get_origin, Union
 
 from ._interfaces import JsonCodec, TypeHandler
 from .orjson_codec import OrJsonCodec
@@ -152,40 +152,67 @@ class JsonTransportCodec:
     def decode_return_value(self, data: bytes) -> Any:
         """
         Decode return value from JSON bytes and validate against self.return_type.
+        Supports nested generics and marker-wrapped types.
         """
+        if not data:
+            return None
+
+        # Step 1: Decode JSON bytes to Python object
+        json_data = self._decode_with_codecs(data)
+
+        # Step 2: Reconstruct marker-based objects (datetime, UUID, set, frozenset, dataclass, pydantic)
+        obj = self._reconstruct_objects(json_data)
+
+        # Step 3: Validate type recursively
+        if self.return_type:
+            if not self._validate_type(obj, self.return_type):
+                raise DeserializationException(
+                    f"Decoded object type {type(obj).__name__} does not match expected {self.return_type}"
+                )
+
+        return obj
+
+    def _validate_type(self, obj: Any, expected_type: type) -> bool:
+        """
+        Recursively validate obj against expected_type.
+        Supports Union, List, Tuple, Set, frozenset, dataclass, Enum, Pydantic models.
+        """
+        origin = get_origin(expected_type)
+        args = get_args(expected_type)
+
+        # Handle Union types
+        if origin is Union:
+            return any(self._validate_type(obj, t) for t in args)
+
+        # Handle container types
+        if origin in (list, tuple, set, frozenset):
+            if not isinstance(obj, origin):
+                return False
+            if args:
+                return all(self._validate_type(item, args[0]) for item in obj)
+            return True
+
+        # Dataclass
+        if hasattr(expected_type, "__dataclass_fields__"):
+            return hasattr(obj, "__dataclass_fields__") and type(obj) == expected_type
+
+        # Enum
+        import enum
+
+        if isinstance(expected_type, type) and issubclass(expected_type, enum.Enum):
+            return isinstance(obj, expected_type)
+
+        # Pydantic
         try:
-            if not data:
-                return None
+            from pydantic import BaseModel
 
-            # Step 1: Decode JSON bytes into Python objects
-            json_data = self._decode_with_codecs(data)
+            if issubclass(expected_type, BaseModel):
+                return isinstance(obj, expected_type)
+        except Exception:
+            pass
 
-            # Step 2: Reconstruct objects (dataclasses, pydantic, enums, etc.)
-            obj = self._reconstruct_objects(json_data)
-
-            # Step 3: Strict return type validation
-            if self.return_type:
-                from typing import get_origin, get_args, Union
-
-                origin = get_origin(self.return_type)
-                args = get_args(self.return_type)
-
-                if origin is Union:
-                    if not any(isinstance(obj, arg) for arg in args):
-                        raise DeserializationException(
-                            f"Decoded object type {type(obj).__name__} not in expected Union types {args}"
-                        )
-                else:
-                    if not isinstance(obj, self.return_type):
-                        raise DeserializationException(
-                            f"Decoded object type {type(obj).__name__} "
-                            f"does not match expected return_type {self.return_type.__name__}"
-                        )
-
-            return obj
-
-        except Exception as e:
-            raise DeserializationException(f"Return value decoding failed: {e}") from e
+        # Plain types
+        return isinstance(obj, expected_type)
 
     # Encoder/Decoder interface compatibility methods
     def encoder(self):
@@ -327,18 +354,10 @@ class JsonTransportCodec:
             return data
 
         if "$date" in data:
-            from datetime import datetime
+            from datetime import datetime, timezone
 
-            # Handle both ISO format with and without timezone
-            date_str = data["$date"]
-            if date_str.endswith("Z"):
-                # Remove Z and treat as UTC
-                date_str = date_str[:-1] + "+00:00"
-            try:
-                return datetime.fromisoformat(date_str)
-            except ValueError:
-                # Fallback for older formats
-                return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(data["$date"].replace("Z", "+00:00"))
+            return dt.astimezone(timezone.utc)
 
         elif "$uuid" in data:
             from uuid import UUID
@@ -347,6 +366,9 @@ class JsonTransportCodec:
 
         elif "$set" in data:
             return set(self._reconstruct_objects(item) for item in data["$set"])
+
+        elif "$frozenset" in data:
+            return frozenset(self._reconstruct_objects(item) for item in data["$frozenset"])
 
         elif "$tuple" in data:
             return tuple(self._reconstruct_objects(item) for item in data["$tuple"])

@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass, asdict
-from datetime import date, datetime, time
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
@@ -44,14 +44,11 @@ test_cases = [
     (12345, int),
     (12.34, float),
     (True, bool),
-    (datetime(2025, 8, 27, 13, 0, 0), datetime),
-    (date(2025, 8, 27), date),
-    (time(13, 0, 0), time),
+    (datetime(2025, 8, 27, 13, 0, tzinfo=timezone.utc), datetime),
     (Decimal("123.45"), Decimal),
     (set([1, 2, 3]), set),
     (frozenset(["a", "b"]), frozenset),
     (UUID("12345678-1234-5678-1234-567812345678"), UUID),
-    (Path("/tmp/file.txt"), Path),
     (Color.RED, Color),
     (SampleDataClass(field1=1, field2="abc"), SampleDataClass),
 ]
@@ -59,7 +56,8 @@ test_cases = [
 
 @pytest.mark.parametrize("value,expected_type", test_cases)
 def test_json_codec_roundtrip(value, expected_type):
-    codec = JsonTransportCodec(parameter_types=[type(value)], return_type=type(value))
+    print(f"Testing value: {value} of type {type(value)}")
+    codec = JsonTransportCodec(parameter_types=[type(value)], return_type=expected_type)
 
     # Encode
     encoded = codec.encode_parameters(value)

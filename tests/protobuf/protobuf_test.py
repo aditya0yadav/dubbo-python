@@ -17,10 +17,8 @@
 
 import pytest
 
-from dubbo.codec.protobuf_codec import ProtobufTransportCodec
-from dubbo.codec.protobuf_codec import PrimitiveHandler
-from dubbo.codec.protobuf_codec import GoogleProtobufMessageHandler
-from dubbo.codec.protobuf_codec.protobuf_codec import SerializationException, DeserializationException
+from dubbo.codec.protobuf_codec import GoogleProtobufMessageHandler, PrimitiveHandler, ProtobufTransportCodec
+from dubbo.codec.protobuf_codec.protobuf_codec import DeserializationException, SerializationException
 
 
 def test_primitive_roundtrip_string():
@@ -63,7 +61,7 @@ def test_decode_with_no_return_type_raises():
 
 @pytest.mark.skipif(not GoogleProtobufMessageHandler.__module__, reason="google.protobuf not available")
 def test_google_protobuf_roundtrip():
-    from generated.greet_pb2 import GreeterRequest, GreeterReply
+    from generated.greet_pb2 import GreeterReply, GreeterRequest
 
     codec = ProtobufTransportCodec(parameter_types=[GreeterRequest], return_type=GreeterReply)
 
