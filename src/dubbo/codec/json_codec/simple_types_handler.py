@@ -53,8 +53,8 @@ class SimpleTypesHandler(TypeHandler):
         :rtype: Dict[str, str]
         """
         if isinstance(obj, UUID):
-            return {"__uuid__": str(obj)}
+            return {"$uuid": str(obj)}
         elif isinstance(obj, Path):
-            return {"__path__": str(obj)}
+            return {"$path": str(obj)}
         else:
             raise ValueError(f"Unsupported simple type: {type(obj)}")

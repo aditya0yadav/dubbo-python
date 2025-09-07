@@ -52,4 +52,4 @@ class DecimalHandler(TypeHandler):
         :return: dictionary representation with string value.
         :rtype: dict[str, str]
         """
-        return {"__decimal__": str(obj)}
+        return {"$decimal": str(obj)}

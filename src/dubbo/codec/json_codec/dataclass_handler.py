@@ -52,4 +52,4 @@ class DataclassHandler(TypeHandler):
         :return: dictionary with class path and field data.
         :rtype: dict[str, Any]
         """
-        return {"__dataclass__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "fields": asdict(obj)}
+        return {"$dataclass": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "$fields": asdict(obj)}

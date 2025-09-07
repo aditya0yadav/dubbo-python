@@ -52,6 +52,6 @@ class CollectionHandler(TypeHandler):
         :rtype: dict[str, list]
         """
         if isinstance(obj, frozenset):
-            return {"__frozenset__": list(obj)}
+            return {"$frozenset": list(obj)}
         else:
-            return {"__set__": list(obj)}
+            return {"$set": list(obj)}

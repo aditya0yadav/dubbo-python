@@ -52,10 +52,18 @@ class DateTimeHandler(TypeHandler):
         :rtype: dict[str, Any]
         """
         if isinstance(obj, datetime):
-            return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
+            # Convert to ISO format with Z suffix for UTC
+            iso_string = obj.isoformat()
+            if obj.tzinfo is None:
+                # Assume naive datetime is UTC and add Z
+                iso_string += "Z"
+            elif str(obj.tzinfo) == "UTC" or obj.utcoffset().total_seconds() == 0:
+                # Replace +00:00 with Z for UTC
+                iso_string = iso_string.replace("+00:00", "Z")
+            return {"$date": iso_string}
         elif isinstance(obj, date):
-            return {"__date__": obj.isoformat()}
+            return {"$dateOnly": obj.isoformat()}
         elif isinstance(obj, time):
-            return {"__time__": obj.isoformat()}
+            return {"$timeOnly": obj.isoformat()}
         else:
             raise ValueError(f"Unsupported datetime type: {type(obj)}")

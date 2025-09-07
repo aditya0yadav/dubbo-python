@@ -86,19 +86,24 @@ class UJsonCodec(JsonCodec):
         :return: Serialized representation.
         """
         if isinstance(obj, datetime):
-            return {"__datetime__": obj.isoformat(), "__timezone__": str(obj.tzinfo) if obj.tzinfo else None}
+            iso_string = obj.isoformat()
+            if obj.tzinfo is None:
+                iso_string += "Z"
+            elif str(obj.tzinfo) == "UTC" or obj.utcoffset().total_seconds() == 0:
+                iso_string = iso_string.replace("+00:00", "Z")
+            return {"$date": iso_string}
         elif isinstance(obj, date):
-            return {"__date__": obj.isoformat()}
+            return {"$dateOnly": obj.isoformat()}
         elif isinstance(obj, time):
-            return {"__time__": obj.isoformat()}
+            return {"$timeOnly": obj.isoformat()}
         elif isinstance(obj, Decimal):
-            return {"__decimal__": str(obj)}
+            return {"$decimal": str(obj)}
         elif isinstance(obj, set):
-            return {"__set__": list(obj)}
+            return {"$set": list(obj)}
         elif isinstance(obj, frozenset):
-            return {"__frozenset__": list(obj)}
+            return {"$frozenset": list(obj)}
         elif isinstance(obj, UUID):
-            return {"__uuid__": str(obj)}
+            return {"$uuid": str(obj)}
         elif isinstance(obj, Path):
-            return {"__path__": str(obj)}
-        return {"__fallback__": str(obj), "__type__": type(obj).__name__}
+            return {"$path": str(obj)}
+        return {"$fallback": str(obj), "$type": type(obj).__name__}

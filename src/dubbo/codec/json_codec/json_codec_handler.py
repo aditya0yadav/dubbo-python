@@ -16,10 +16,10 @@
 
 from typing import Any, Optional
 
-from .orjson_codec import OrJsonCodec
-from .ujson_codec import UJsonCodec
-from .standard_json import StandardJsonCodec
 from ._interfaces import JsonCodec, TypeHandler
+from .orjson_codec import OrJsonCodec
+from .standard_json import StandardJsonCodec
+from .ujson_codec import UJsonCodec
 
 __all__ = ["JsonTransportCodec", "SerializationException", "DeserializationException"]
 
@@ -151,19 +151,38 @@ class JsonTransportCodec:
 
     def decode_return_value(self, data: bytes) -> Any:
         """
-        Decode return value from JSON bytes.
-
-        :param data: The JSON bytes to decode.
-        :type data: bytes
-        :return: Decoded return value.
-        :rtype: Any
+        Decode return value from JSON bytes and validate against self.return_type.
         """
         try:
             if not data:
                 return None
 
+            # Step 1: Decode JSON bytes into Python objects
             json_data = self._decode_with_codecs(data)
-            return self._reconstruct_objects(json_data)
+
+            # Step 2: Reconstruct objects (dataclasses, pydantic, enums, etc.)
+            obj = self._reconstruct_objects(json_data)
+
+            # Step 3: Strict return type validation
+            if self.return_type:
+                from typing import get_origin, get_args, Union
+
+                origin = get_origin(self.return_type)
+                args = get_args(self.return_type)
+
+                if origin is Union:
+                    if not any(isinstance(obj, arg) for arg in args):
+                        raise DeserializationException(
+                            f"Decoded object type {type(obj).__name__} not in expected Union types {args}"
+                        )
+                else:
+                    if not isinstance(obj, self.return_type):
+                        raise DeserializationException(
+                            f"Decoded object type {type(obj).__name__} "
+                            f"does not match expected return_type {self.return_type.__name__}"
+                        )
+
+            return obj
 
         except Exception as e:
             raise DeserializationException(f"Return value decoding failed: {e}") from e
@@ -249,12 +268,12 @@ class JsonTransportCodec:
                 except Exception as e:
                     if self.strict_validation:
                         raise SerializationException(f"Handler failed for {type(obj).__name__}: {e}") from e
-                    return {"__serialization_error__": str(e), "__type__": type(obj).__name__}
+                    return {"$error": str(e), "$type": type(obj).__name__}
 
         # Fallback for unknown types
         if self.strict_validation:
             raise SerializationException(f"No handler for type {type(obj).__name__}")
-        return {"__fallback__": str(obj), "__type__": type(obj).__name__}
+        return {"$fallback": str(obj), "$type": type(obj).__name__}
 
     def _encode_with_codecs(self, obj: Any) -> bytes:
         """
@@ -307,49 +326,59 @@ class JsonTransportCodec:
                 return [self._reconstruct_objects(item) for item in data]
             return data
 
-        # Handle special serialized objects
-        if "__datetime__" in data:
+        if "$date" in data:
             from datetime import datetime
 
-            return datetime.fromisoformat(data["__datetime__"])
-        elif "__date__" in data:
-            from datetime import date
+            # Handle both ISO format with and without timezone
+            date_str = data["$date"]
+            if date_str.endswith("Z"):
+                # Remove Z and treat as UTC
+                date_str = date_str[:-1] + "+00:00"
+            try:
+                return datetime.fromisoformat(date_str)
+            except ValueError:
+                # Fallback for older formats
+                return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
 
-            return date.fromisoformat(data["__date__"])
-        elif "__time__" in data:
-            from datetime import time
-
-            return time.fromisoformat(data["__time__"])
-        elif "__decimal__" in data:
-            from decimal import Decimal
-
-            return Decimal(data["__decimal__"])
-        elif "__set__" in data:
-            return set(self._reconstruct_objects(item) for item in data["__set__"])
-        elif "__frozenset__" in data:
-            return frozenset(self._reconstruct_objects(item) for item in data["__frozenset__"])
-        elif "__uuid__" in data:
+        elif "$uuid" in data:
             from uuid import UUID
 
-            return UUID(data["__uuid__"])
-        elif "__path__" in data:
-            from pathlib import Path
+            return UUID(data["$uuid"])
 
-            return Path(data["__path__"])
-        elif "__pydantic_model__" in data and "__model_data__" in data:
+        elif "$set" in data:
+            return set(self._reconstruct_objects(item) for item in data["$set"])
+
+        elif "$tuple" in data:
+            return tuple(self._reconstruct_objects(item) for item in data["$tuple"])
+
+        elif "$binary" in data:
+            import base64
+
+            binary_data = base64.b64decode(data["$binary"])
+            return binary_data
+
+        elif "$decimal" in data:
+            from decimal import Decimal
+
+            return Decimal(data["$decimal"])
+
+        elif "$pydantic" in data and "$data" in data:
             return self._reconstruct_pydantic_model(data)
-        elif "__dataclass__" in data:
+
+        elif "$dataclass" in data:
             return self._reconstruct_dataclass(data)
-        elif "__enum__" in data:
+
+        elif "$enum" in data:
             return self._reconstruct_enum(data)
+
         else:
             return {key: self._reconstruct_objects(value) for key, value in data.items()}
 
     def _reconstruct_pydantic_model(self, data: dict) -> Any:
         """Reconstruct a Pydantic model from serialized data"""
         try:
-            model_path = data["__pydantic_model__"]
-            model_data = data["__model_data__"]
+            model_path = data.get("$pydantic") or data.get("__pydantic_model__")
+            model_data = data.get("$data") or data.get("__model_data__")
 
             module_name, class_name = model_path.rsplit(".", 1)
 
@@ -361,27 +390,35 @@ class JsonTransportCodec:
             reconstructed_data = self._reconstruct_objects(model_data)
             return model_class(**reconstructed_data)
         except Exception:
-            return self._reconstruct_objects(data.get("__model_data__", {}))
+            return self._reconstruct_objects(model_data or {})
 
     def _reconstruct_dataclass(self, data: dict) -> Any:
         """Reconstruct a dataclass from serialized data"""
-        module_name, class_name = data["__dataclass__"].rsplit(".", 1)
+
+        class_path = data.get("$dataclass") or data.get("__dataclass__")
+        fields_data = data.get("$fields") or data.get("fields")
+
+        module_name, class_name = class_path.rsplit(".", 1)
 
         import importlib
 
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
-        fields = self._reconstruct_objects(data["fields"])
+        fields = self._reconstruct_objects(fields_data)
         return cls(**fields)
 
     def _reconstruct_enum(self, data: dict) -> Any:
         """Reconstruct an enum from serialized data"""
-        module_name, class_name = data["__enum__"].rsplit(".", 1)
+
+        enum_path = data.get("$enum") or data.get("__enum__")
+        enum_value = data.get("$value") or data.get("value")
+
+        module_name, class_name = enum_path.rsplit(".", 1)
 
         import importlib
 
         module = importlib.import_module(module_name)
         cls = getattr(module, class_name)
 
-        return cls(data["value"])
+        return cls(enum_value)

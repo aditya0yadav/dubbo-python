@@ -52,4 +52,4 @@ class EnumHandler(TypeHandler):
         :return: Dictionary with enum class path and value.
         :rtype: dict[str, Any]
         """
-        return {"__enum__": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "value": obj.value}
+        return {"$enum": f"{obj.__class__.__module__}.{obj.__class__.__qualname__}", "$value": obj.value}
