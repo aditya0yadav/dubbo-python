@@ -18,7 +18,6 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
-from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -56,7 +55,6 @@ test_cases = [
 
 @pytest.mark.parametrize("value,expected_type", test_cases)
 def test_json_codec_roundtrip(value, expected_type):
-    print(f"Testing value: {value} of type {type(value)}")
     codec = JsonTransportCodec(parameter_types=[type(value)], return_type=expected_type)
 
     # Encode
